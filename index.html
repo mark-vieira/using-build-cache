@@ -35,14 +35,42 @@
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
 <li><a href="#content_tbc">1. CONTENT_TBC</a></li>
-<li><a href="#debugging_and_diagnosing_cache_misses">2. Debugging and diagnosing cache misses</a>
+<li><a href="#build_cache_guide">Build cache guide</a>
+<ul class="sectlevel1">
+<li><a href="#introduction">1. Introduction</a></li>
+<li><a href="#use_cases_for_the_build_cache">2. Use cases for the build cache</a>
 <ul class="sectlevel2">
-<li><a href="#how_to_find_errors">2.1. How to find errors</a></li>
-<li><a href="#helpful_data_for_diagnosing_a_cache_miss">2.2. Helpful data for diagnosing a cache miss</a></li>
-<li><a href="#diagnosing_the_reasons_for_a_cache_miss">2.3. Diagnosing the reasons for a cache miss</a></li>
+<li><a href="#speed_up_developer_builds_with_the_local_cache">2.1. Speed up developer builds with the local cache</a></li>
+<li><a href="#share_results_between_ci_builds">2.2. Share results between CI builds</a></li>
+<li><a href="#accelerate_developer_builds_by_reusing_ci_results">2.3. Accelerate developer builds by reusing CI results</a></li>
+<li><a href="#combine_ci_results_with_local_caching_on_developer_machines">2.4. Combine CI results with local caching on developer machines</a></li>
+<li><a href="#share_results_between_developers">2.5. Share results between developers</a></li>
 </ul>
 </li>
-<li><a href="#summary">3. Summary</a></li>
+</ul>
+</li>
+<li><a href="#important_concepts">Important concepts</a>
+<ul class="sectlevel1">
+<li><a href="#repeatable_task_outcomes">1. Repeatable task outcomes</a></li>
+<li><a href="#stable_task_inputs">2. Stable task inputs</a></li>
+<li><a href="#normalization">3. Better reuse via input normalization</a>
+<ul class="sectlevel2">
+<li><a href="#path_sensitivity_and_relocatability">3.1. Path sensitivity and relocatability</a></li>
+<li><a href="#compile_avoidance">3.2. Compile avoidance</a></li>
+<li><a href="#runtime_classpath_normalization">3.3. Runtime classpath normalization</a></li>
+</ul>
+</li>
+<li><a href="#the_case_against_overlapping_outputs">4. The case against overlapping outputs</a></li>
+<li><a href="#debugging_and_diagnosing_cache_misses">5. Debugging and diagnosing cache misses</a>
+<ul class="sectlevel2">
+<li><a href="#how_to_find_errors">5.1. How to find errors</a></li>
+<li><a href="#helpful_data_for_diagnosing_a_cache_miss">5.2. Helpful data for diagnosing a cache miss</a></li>
+<li><a href="#diagnosing_the_reasons_for_a_cache_miss">5.3. Diagnosing the reasons for a cache miss</a></li>
+</ul>
+</li>
+<li><a href="#summary">6. Summary</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -62,8 +90,152 @@
 </div>
 </div>
 </div>
+<h1 id="build_cache_guide" class="sect0"><a class="anchor" href="#build_cache_guide"></a>Build cache guide</h1>
 <div class="sect1">
-<h2 id="debugging_and_diagnosing_cache_misses"><a class="anchor" href="#debugging_and_diagnosing_cache_misses"></a>2. Debugging and diagnosing cache misses</h2>
+<h2 id="introduction"><a class="anchor" href="#introduction"></a>1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The best way to do work faster is to not do work that doesn’t need doing. Gradle has two main mechanisms to avoid work at the task level:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>incremental build</strong> avoids running a task if its inputs and outputs are equivalent to what they were during its previous execution,</p>
+</li>
+<li>
+<p><strong>task output caching</strong> reuses task outputs produced with the same inputs anytime before, on any machine that is connected to the same build cache backend.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This guide covers the different use cases for Gradle’s build cache, from local-only development to caching task outputs across large teams. We will discuss ways to measure the advantages provided by the build cache, and methods to improve cache performance, or to diagnose and fix common problems. Let’s dive in!</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="use_cases_for_the_build_cache"><a class="anchor" href="#use_cases_for_the_build_cache"></a>2. Use cases for the build cache</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Gradle’s build cache is a versatile feature that can be used in different ways.</p>
+</div>
+<div class="sect2">
+<h3 id="speed_up_developer_builds_with_the_local_cache"><a class="anchor" href="#speed_up_developer_builds_with_the_local_cache"></a>2.1. Speed up developer builds with the local cache</h3>
+<div class="paragraph">
+<p>Even when used by a single developer only, the build cache can be pretty useful. Gradle&#8217;s <em>incremental build</em> feature helps avoid work that is already done, but once you change the inputs of a task, it forgets any previous results. When you are switching branches back and forth, the local results get rebuilt over and over again, even if you are building something that has already been built before. The build cache remembers, though, and heavily reduces the need to rebuild things when they were already built locally. In general it&#8217;s very useful when you need to rebuild different commits, like when running <code>git bisect</code>.</p>
+</div>
+<div class="paragraph">
+<p>The local cache can also be useful when working with a project that has multiple variants dimensions, like in the case of Android applications. Each variant has a number of tasks associated with it, and some of those task variants, despite having different names, can end up doing the same things. With the local cache enabled reuse between task variants will happen automatically when applicable.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="share_results_between_ci_builds"><a class="anchor" href="#share_results_between_ci_builds"></a>2.2. Share results between CI builds</h3>
+<div class="paragraph">
+<p>The build cache can do more than going back-and-forth in time: it can also bridge physical distance between computers, allowing to reuse results generated on one machine to be reused by another.</p>
+</div>
+<div class="paragraph">
+<p>A usual first step when introducing the build cache within a team is to enable it for CI builds only. Using a shared HTTP build cache backend (such as <a href="https://gradle.com/build-cache/">the one provided by Gradle Enterprise</a> can significantly reduce the work CI executors need to do. This translates into faster feedback to developers, and less money spent on the CI infrastructure.</p>
+</div>
+<div class="paragraph">
+<p>Using the build cache on CI first makes sense as CI environment is usually easier to control than developer machines. It helps shake out issues with the build that hurt cacheability.</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p><strong>TODO:</strong> Discus audit requirements.</p>
+</div>
+</blockquote>
+</div>
+</div>
+<div class="sect2">
+<h3 id="accelerate_developer_builds_by_reusing_ci_results"><a class="anchor" href="#accelerate_developer_builds_by_reusing_ci_results"></a>2.3. Accelerate developer builds by reusing CI results</h3>
+<div class="paragraph">
+<p>When multiple developers work on the same project, they don&#8217;t just need to build their own changes: whenever they pull from version control, they end up having to build each others' changes as well. If the pulled changes are sufficiently independent, the developer can safely reuse outputs already generated on CI. Say, you&#8217;re working on module "A", and you pull in some changes to module "B" (which does not depend on your module). If those changes were already built in CI, you can download the task outputs for module "B" from the cache instead of generating them locally.</p>
+</div>
+<div class="paragraph">
+<p>The changes don&#8217;t need to be completely independent, either; we&#8217;ll take a look at the strategies to reuse results when dependencies are involved in the section about the <a href="#normalization">different forms of normalization</a>.</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p><strong>TODO:</strong> Mention moving a Git tag to the latest published commit can help reduce problems with developers pulling too fresh changes.</p>
+</div>
+</blockquote>
+</div>
+</div>
+<div class="sect2">
+<h3 id="combine_ci_results_with_local_caching_on_developer_machines"><a class="anchor" href="#combine_ci_results_with_local_caching_on_developer_machines"></a>2.4. Combine CI results with local caching on developer machines</h3>
+<div class="paragraph">
+<p>Developers can utilize both a local and a remote cache. While pulling results from a CI-filled remote cache helps to avoid work needed because of changes by other developers, the local cache can speed up switching branches and doing <code>git bisect</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="share_results_between_developers"><a class="anchor" href="#share_results_between_developers"></a>2.5. Share results between developers</h3>
+<div class="paragraph">
+<p>Using the local cache is a sort of one-to-one thing, while the HTTP cache typically has a one-to-many topology. Gradle also allows the use of distributed caches, for example with using the <a href="https://github.com/gradle/gradle-hazelcast-plugin/">Hazelcast cache backend</a>.</p>
+</div>
+<div class="paragraph">
+<p>It is also possible to allow developers to upload their results to a shared cache, thus making them available for everyone else, even before CI had a chance to build them.</p>
+</div>
+<div class="paragraph">
+<p>While sharing results from developer machines seems like a good idea at first sight, it might not always be what you are looking for:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The environment on developer machines is usually not as strictly controlled as it is on CI. Gradle tries to track every relevant bit of information that can influence a task&#8217;s output, but if there are tasks that are incorrectly defined, developers can pollite the cache with corrupted results.</p>
+</li>
+<li>
+<p>Gradle is in general sage to be used with incremental builds. However, we recommend only uploading to a shared cache from <code>clean</code> builds.</p>
+</li>
+<li>
+<p>Developers can make changes to task outputs while the task is running even unintentionally, or even unknowingly, like continuing making changes in their IDEs while the build is running. Currently Gradle has no good way to defend against these changes, and will simply cache whatever is in the output directory once the task is finished. This again can lead to corrupted results being uploaded to the shared cache.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<h1 id="important_concepts" class="sect0"><a class="anchor" href="#important_concepts"></a>Important concepts</h1>
+<div class="sect1">
+<h2 id="repeatable_task_outcomes"><a class="anchor" href="#repeatable_task_outcomes"></a>1. Repeatable task outcomes</h2>
+<div class="sectionbody">
+
+</div>
+</div>
+<div class="sect1">
+<h2 id="stable_task_inputs"><a class="anchor" href="#stable_task_inputs"></a>2. Stable task inputs</h2>
+<div class="sectionbody">
+
+</div>
+</div>
+<div class="sect1">
+<h2 id="normalization"><a class="anchor" href="#normalization"></a>3. Better reuse via input normalization</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="path_sensitivity_and_relocatability"><a class="anchor" href="#path_sensitivity_and_relocatability"></a>3.1. Path sensitivity and relocatability</h3>
+
+</div>
+<div class="sect2">
+<h3 id="compile_avoidance"><a class="anchor" href="#compile_avoidance"></a>3.2. Compile avoidance</h3>
+
+</div>
+<div class="sect2">
+<h3 id="runtime_classpath_normalization"><a class="anchor" href="#runtime_classpath_normalization"></a>3.3. Runtime classpath normalization</h3>
+<div class="sect3">
+<h4 id="filtering"><a class="anchor" href="#filtering"></a>3.3.1. Filtering</h4>
+
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="the_case_against_overlapping_outputs"><a class="anchor" href="#the_case_against_overlapping_outputs"></a>4. The case against overlapping outputs</h2>
+<div class="sectionbody">
+
+</div>
+</div>
+<div class="sect1">
+<h2 id="debugging_and_diagnosing_cache_misses"><a class="anchor" href="#debugging_and_diagnosing_cache_misses"></a>5. Debugging and diagnosing cache misses</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>For using task output caching efficiently it is essential to keep the balance between specifying all the inputs to your
@@ -77,7 +249,7 @@ will share outputs between tasks that should have had a different output. If you
 suggest add the thing that should have caused the cache miss as an input to your task.</p>
 </div>
 <div class="sect2">
-<h3 id="how_to_find_errors"><a class="anchor" href="#how_to_find_errors"></a>2.1. How to find errors</h3>
+<h3 id="how_to_find_errors"><a class="anchor" href="#how_to_find_errors"></a>5.1. How to find errors</h3>
 <div class="ulist">
 <ul>
 <li>
@@ -93,7 +265,7 @@ suggest add the thing that should have caused the cache miss as an input to your
 </div>
 </div>
 <div class="sect2">
-<h3 id="helpful_data_for_diagnosing_a_cache_miss"><a class="anchor" href="#helpful_data_for_diagnosing_a_cache_miss"></a>2.2. Helpful data for diagnosing a cache miss</h3>
+<h3 id="helpful_data_for_diagnosing_a_cache_miss"><a class="anchor" href="#helpful_data_for_diagnosing_a_cache_miss"></a>5.2. Helpful data for diagnosing a cache miss</h3>
 <div class="paragraph">
 <p>A cache miss happens when Gradle calculates a build cache key for a task which is different from any of the build cache keys in the cache.
 Only comparing the build cache key on its own does not give much information, so we need to look at some finer grained data to be able to diagnose the cache miss.
@@ -136,13 +308,13 @@ task you need to resort to comparing those files on disks yourself.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="diagnosing_the_reasons_for_a_cache_miss"><a class="anchor" href="#diagnosing_the_reasons_for_a_cache_miss"></a>2.3. Diagnosing the reasons for a cache miss</h3>
+<h3 id="diagnosing_the_reasons_for_a_cache_miss"><a class="anchor" href="#diagnosing_the_reasons_for_a_cache_miss"></a>5.3. Diagnosing the reasons for a cache miss</h3>
 
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="summary"><a class="anchor" href="#summary"></a>3. Summary</h2>
+<h2 id="summary"><a class="anchor" href="#summary"></a>6. Summary</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p><strong>TBC</strong></p>
@@ -152,7 +324,7 @@ task you need to resort to comparing those files on disks yourself.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-22 07:54:58 UTC
+Last updated 2017-05-22 15:01:17 UTC
 </div>
 </div>
 </body>
