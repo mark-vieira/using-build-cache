@@ -35,7 +35,14 @@
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
 <li><a href="#content_tbc">1. CONTENT_TBC</a></li>
-<li><a href="#summary">2. Summary</a></li>
+<li><a href="#debugging_and_diagnosing_cache_misses">2. Debugging and diagnosing cache misses</a>
+<ul class="sectlevel2">
+<li><a href="#how_to_find_errors">2.1. How to find errors</a></li>
+<li><a href="#helpful_data_for_diagnosing_a_cache_miss">2.2. Helpful data for diagnosing a cache miss</a></li>
+<li><a href="#diagnosing_the_reasons_for_a_cache_miss">2.3. Diagnosing the reasons for a cache miss</a></li>
+</ul>
+</li>
+<li><a href="#summary">3. Summary</a></li>
 </ul>
 </div>
 </div>
@@ -56,7 +63,86 @@
 </div>
 </div>
 <div class="sect1">
-<h2 id="summary"><a class="anchor" href="#summary"></a>2. Summary</h2>
+<h2 id="debugging_and_diagnosing_cache_misses"><a class="anchor" href="#debugging_and_diagnosing_cache_misses"></a>2. Debugging and diagnosing cache misses</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For using task output caching efficiently it is essential to keep the balance between specifying all the inputs to your
+tasks while not over-specifying. If you don&#8217;t specify enough of your inputs then your build will be incorrect and you
+will share outputs between tasks that should have had a different output. If you specify unnecessary inputs to your tasks,
+ you will have cache misses while you could have reused earlier outputs.
+ For Gradle&#8217;s built-in tasks we prefer to err on the side of correctness and we suggest that you do the same.</p>
+</div>
+<div class="paragraph">
+<p>This chapter is about finding out why a cache miss was happening. If you have a cache hit which you didn&#8217;t expect we
+suggest add the thing that should have caused the cache miss as an input to your task.</p>
+</div>
+<div class="sect2">
+<h3 id="how_to_find_errors"><a class="anchor" href="#how_to_find_errors"></a>2.1. How to find errors</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Run build with no changes to see if caching still works</p>
+</li>
+<li>
+<p>Record graphs of execution times and see if it makes sense to you</p>
+</li>
+<li>
+<p>Look a certain types of changes and see if the expected tasks are cached</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="helpful_data_for_diagnosing_a_cache_miss"><a class="anchor" href="#helpful_data_for_diagnosing_a_cache_miss"></a>2.2. Helpful data for diagnosing a cache miss</h3>
+<div class="paragraph">
+<p>A cache miss happens when Gradle calculates a build cache key for a task which is different from any of the build cache keys in the cache.
+Only comparing the build cache key on its own does not give much information, so we need to look at some finer grained data to be able to diagnose the cache miss.
+All the things influencing the build cache key can be found in the <a href="https://docs.gradle.org/3.5/userguide/build_cache.html#sec:task_output_caching_details">userguide</a>.</p>
+</div>
+<div class="paragraph">
+<p>Basically, we can compare the following data, listed from coarse grained to fine grained:
+- Build cache keys
+- Task and Task action implementation inputs
+  - classloader hash
+  - class name
+- Individual task property input hashes
+- Hashes of files which are part of task input properties</p>
+</div>
+<div class="paragraph">
+<p>Currently, the build cache key for the task is logged at the info level,
+while information down to the individual input property level is available in the debug log:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>Appending taskClass to build cache key: org.gradle.api.tasks.compile.JavaCompile_Decorated
+Appending classLoaderHash to build cache key: da6eca52100422099189290bf68f200a
+Appending actionType to build cache key: org.gradle.api.internal.project.taskfactory.AbstractOutputPropertyAnnotationHandler$2$1
+Appending actionClassLoaderHash to build cache key: 2cdf3f9202925b5befa161030ab43724
+Appending actionType to build cache key: org.gradle.api.internal.project.taskfactory.TaskClassValidator
+.
+.
+.
+Appending inputPropertyHash for 'classpath' to build cache key: 2b6ab53aa11d4a7d4a1f95a8f78f4d7c
+Appending inputPropertyHash for 'effectiveAnnotationProcessorPath' to build cache key: d41d8cd98f00b204e9800998ecf8427e
+Appending inputPropertyHash for 'options.sourcepath' to build cache key: d41d8cd98f00b204e9800998ecf8427e
+Appending inputPropertyHash for 'source' to build cache key: f6ba49b2466f0090272c43ac5f54ec1d
+Appending outputPropertyName to build cache key: destinationDir
+Build cache key for task ':compileJava' is 2b220117efa6710f7ab191a0bbe48c00</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you want to go into the details of finding out e.g. which classes and jar files constitute the <code>classpath</code> for the <code>compileJava</code>
+task you need to resort to comparing those files on disks yourself.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="diagnosing_the_reasons_for_a_cache_miss"><a class="anchor" href="#diagnosing_the_reasons_for_a_cache_miss"></a>2.3. Diagnosing the reasons for a cache miss</h3>
+
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="summary"><a class="anchor" href="#summary"></a>3. Summary</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p><strong>TBC</strong></p>
@@ -66,7 +152,7 @@
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-12 08:01:39 UTC
+Last updated 2017-05-22 07:54:58 UTC
 </div>
 </div>
 </body>
