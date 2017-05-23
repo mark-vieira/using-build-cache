@@ -5,7 +5,7 @@
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.3">
-<title>Build Cache Practises</title>
+<title>Build Cache Practices</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css">
 <link rel="stylesheet" href="./coderay-asciidoctor.css">
 <link rel="stylesheet" href="https://guides.gradle.org/asciidoctor.css">
@@ -30,23 +30,17 @@
 </script>
 </head>
 <body class="article toc2 toc-right">
-<div id="header"><div style="padding-top: 10px;"><a href="https://guides.gradle.org"><img src="http://guides.gradle.org/gradle-guides.svg" alt=""></a></div><h1>Build Cache Practises</h1>
+<div id="header"><div style="padding-top: 10px;"><a href="https://guides.gradle.org"><img src="http://guides.gradle.org/gradle-guides.svg" alt=""></a></div><h1>Build Cache Practices</h1>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#content_tbc">1. CONTENT_TBC</a></li>
-<li><a href="#build_cache_guide">Build cache guide</a>
-<ul class="sectlevel1">
-<li><a href="#introduction">1. Introduction</a></li>
-<li><a href="#use_cases_for_the_build_cache">2. Use cases for the build cache</a>
+<li><a href="#use_cases_for_the_build_cache">1. Use cases for the build cache</a>
 <ul class="sectlevel2">
-<li><a href="#speed_up_developer_builds_with_the_local_cache">2.1. Speed up developer builds with the local cache</a></li>
-<li><a href="#share_results_between_ci_builds">2.2. Share results between CI builds</a></li>
-<li><a href="#accelerate_developer_builds_by_reusing_ci_results">2.3. Accelerate developer builds by reusing CI results</a></li>
-<li><a href="#combine_ci_results_with_local_caching_on_developer_machines">2.4. Combine CI results with local caching on developer machines</a></li>
-<li><a href="#share_results_between_developers">2.5. Share results between developers</a></li>
-</ul>
-</li>
+<li><a href="#speed_up_developer_builds_with_the_local_cache">1.1. Speed up developer builds with the local cache</a></li>
+<li><a href="#share_results_between_ci_builds">1.2. Share results between CI builds</a></li>
+<li><a href="#accelerate_developer_builds_by_reusing_ci_results">1.3. Accelerate developer builds by reusing CI results</a></li>
+<li><a href="#combine_ci_results_with_local_caching_on_developer_machines">1.4. Combine CI results with local caching on developer machines</a></li>
+<li><a href="#share_results_between_developers">1.5. Share results between developers</a></li>
 </ul>
 </li>
 <li><a href="#important_concepts">Important concepts</a>
@@ -78,23 +72,6 @@
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p><strong>INTRO_TBC</strong></p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="content_tbc"><a class="anchor" href="#content_tbc"></a>1. CONTENT_TBC</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p><strong>TBC</strong></p>
-</div>
-</div>
-</div>
-<h1 id="build_cache_guide" class="sect0"><a class="anchor" href="#build_cache_guide"></a>Build cache guide</h1>
-<div class="sect1">
-<h2 id="introduction"><a class="anchor" href="#introduction"></a>1. Introduction</h2>
-<div class="sectionbody">
-<div class="paragraph">
 <p>The best way to do work faster is to not do work that doesn’t need doing. Gradle has two main mechanisms to avoid work at the task level:</p>
 </div>
 <div class="ulist">
@@ -113,13 +90,13 @@
 </div>
 </div>
 <div class="sect1">
-<h2 id="use_cases_for_the_build_cache"><a class="anchor" href="#use_cases_for_the_build_cache"></a>2. Use cases for the build cache</h2>
+<h2 id="use_cases_for_the_build_cache"><a class="anchor" href="#use_cases_for_the_build_cache"></a>1. Use cases for the build cache</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Gradle’s build cache is a versatile feature that can be used in different ways.</p>
 </div>
 <div class="sect2">
-<h3 id="speed_up_developer_builds_with_the_local_cache"><a class="anchor" href="#speed_up_developer_builds_with_the_local_cache"></a>2.1. Speed up developer builds with the local cache</h3>
+<h3 id="speed_up_developer_builds_with_the_local_cache"><a class="anchor" href="#speed_up_developer_builds_with_the_local_cache"></a>1.1. Speed up developer builds with the local cache</h3>
 <div class="paragraph">
 <p>Even when used by a single developer only, the build cache can be pretty useful. Gradle&#8217;s <em>incremental build</em> feature helps avoid work that is already done, but once you change the inputs of a task, it forgets any previous results. When you are switching branches back and forth, the local results get rebuilt over and over again, even if you are building something that has already been built before. The build cache remembers, though, and heavily reduces the need to rebuild things when they were already built locally. In general it&#8217;s very useful when you need to rebuild different commits, like when running <code>git bisect</code>.</p>
 </div>
@@ -128,7 +105,7 @@
 </div>
 </div>
 <div class="sect2">
-<h3 id="share_results_between_ci_builds"><a class="anchor" href="#share_results_between_ci_builds"></a>2.2. Share results between CI builds</h3>
+<h3 id="share_results_between_ci_builds"><a class="anchor" href="#share_results_between_ci_builds"></a>1.2. Share results between CI builds</h3>
 <div class="paragraph">
 <p>The build cache can do more than going back-and-forth in time: it can also bridge physical distance between computers, allowing to reuse results generated on one machine to be reused by another.</p>
 </div>
@@ -147,7 +124,7 @@
 </div>
 </div>
 <div class="sect2">
-<h3 id="accelerate_developer_builds_by_reusing_ci_results"><a class="anchor" href="#accelerate_developer_builds_by_reusing_ci_results"></a>2.3. Accelerate developer builds by reusing CI results</h3>
+<h3 id="accelerate_developer_builds_by_reusing_ci_results"><a class="anchor" href="#accelerate_developer_builds_by_reusing_ci_results"></a>1.3. Accelerate developer builds by reusing CI results</h3>
 <div class="paragraph">
 <p>When multiple developers work on the same project, they don&#8217;t just need to build their own changes: whenever they pull from version control, they end up having to build each others' changes as well. If the pulled changes are sufficiently independent, the developer can safely reuse outputs already generated on CI. Say, you&#8217;re working on module "A", and you pull in some changes to module "B" (which does not depend on your module). If those changes were already built in CI, you can download the task outputs for module "B" from the cache instead of generating them locally.</p>
 </div>
@@ -163,13 +140,13 @@
 </div>
 </div>
 <div class="sect2">
-<h3 id="combine_ci_results_with_local_caching_on_developer_machines"><a class="anchor" href="#combine_ci_results_with_local_caching_on_developer_machines"></a>2.4. Combine CI results with local caching on developer machines</h3>
+<h3 id="combine_ci_results_with_local_caching_on_developer_machines"><a class="anchor" href="#combine_ci_results_with_local_caching_on_developer_machines"></a>1.4. Combine CI results with local caching on developer machines</h3>
 <div class="paragraph">
 <p>Developers can utilize both a local and a remote cache. While pulling results from a CI-filled remote cache helps to avoid work needed because of changes by other developers, the local cache can speed up switching branches and doing <code>git bisect</code>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="share_results_between_developers"><a class="anchor" href="#share_results_between_developers"></a>2.5. Share results between developers</h3>
+<h3 id="share_results_between_developers"><a class="anchor" href="#share_results_between_developers"></a>1.5. Share results between developers</h3>
 <div class="paragraph">
 <p>Using the local cache is a sort of one-to-one thing, while the HTTP cache typically has a one-to-many topology. Gradle also allows the use of distributed caches, for example with using the <a href="https://github.com/gradle/gradle-hazelcast-plugin/">Hazelcast cache backend</a>.</p>
 </div>
@@ -239,14 +216,14 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>For using task output caching efficiently it is essential to keep the balance between specifying all the inputs to your
-tasks while not over-specifying. If you don&#8217;t specify enough of your inputs then your build will be incorrect and you
+tasks while not over-specifying them. If you don&#8217;t specify enough of your inputs then your build will be incorrect and you
 will share outputs between tasks that should have had a different output. If you specify unnecessary inputs to your tasks,
  you will have cache misses while you could have reused earlier outputs.
  For Gradle&#8217;s built-in tasks we prefer to err on the side of correctness and we suggest that you do the same.</p>
 </div>
 <div class="paragraph">
 <p>This chapter is about finding out why a cache miss was happening. If you have a cache hit which you didn&#8217;t expect we
-suggest add the thing that should have caused the cache miss as an input to your task.</p>
+suggest to declare whatever change you expected to trigger the cache miss as an input to the task.</p>
 </div>
 <div class="sect2">
 <h3 id="how_to_find_errors"><a class="anchor" href="#how_to_find_errors"></a>5.1. How to find errors</h3>
@@ -272,13 +249,29 @@ Only comparing the build cache key on its own does not give much information, so
 All the things influencing the build cache key can be found in the <a href="https://docs.gradle.org/3.5/userguide/build_cache.html#sec:task_output_caching_details">userguide</a>.</p>
 </div>
 <div class="paragraph">
-<p>Basically, we can compare the following data, listed from coarse grained to fine grained:
-- Build cache keys
-- Task and Task action implementation inputs
-  - classloader hash
-  - class name
-- Individual task property input hashes
-- Hashes of files which are part of task input properties</p>
+<p>Basically, we can compare the following data, listed from coarse grained to fine grained:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Build cache keys</p>
+</li>
+<li>
+<p>Task and Task action implementation inputs</p>
+</li>
+<li>
+<p>classloader hash</p>
+</li>
+<li>
+<p>class name</p>
+</li>
+<li>
+<p>Individual task property input hashes</p>
+</li>
+<li>
+<p>Hashes of files which are part of task input properties</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
 <p>Currently, the build cache key for the task is logged at the info level,
@@ -306,10 +299,53 @@ Build cache key for task ':compileJava' is 2b220117efa6710f7ab191a0bbe48c00</pre
 <p>If you want to go into the details of finding out e.g. which classes and jar files constitute the <code>classpath</code> for the <code>compileJava</code>
 task you need to resort to comparing those files on disks yourself.</p>
 </div>
+<div class="paragraph">
+<p>Luckily, you do not have to capture this data yourself - the build scan plugin already takes care of this for you.
+This means that Gradle Enterprise already has the necessary data to diagnose the cache miss when using the build scan plugin.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="diagnosing_the_reasons_for_a_cache_miss"><a class="anchor" href="#diagnosing_the_reasons_for_a_cache_miss"></a>5.3. Diagnosing the reasons for a cache miss</h3>
-
+<div class="paragraph">
+<p>Having the data from the last section at hand, you should be able to diagnose why the outputs of a certain task were not found in the build cache.
+Since you were expecting the task to be cached, you should be able to pinpoint a build which would have produced the artifact under question.</p>
+</div>
+<div class="paragraph">
+<p>At first, you should check if the implementation of the task changed. This would mean checking the class names and classloader hashes
+for the task class itself and for each of its action. If there is a change, this means that the build script, <code>buildSrc</code> or the Gradle version has changed.</p>
+</div>
+<div class="paragraph">
+<p>If the implementation is the same, then you need to start comparing inputs between the two builds.
+There should be at least one different input hash. If it is a simple value property, then the configuration of the task changed.
+This can happen for example by</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>changing the build script,</p>
+</li>
+<li>
+<p>conditionally configuring the task differently for CI or the developer builds,</p>
+</li>
+<li>
+<p>depending on a system property or an environment variable for the task configuration,</p>
+</li>
+<li>
+<p>or having an absolute path is part of the input.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If the changed property is a file property, then the reasons can be the same as for the change of a value property.
+Most probably though a file on the filesystem changed in a way that Gradle detects a difference for this input.
+The most common case will be that the source code was changed by a check in.
+It is also possible that a file generated by Gradle changed, e.g. since it includes a timestamp.
+Note that the Java version can also influence the output of the Java compiler.
+If you did not expect the file to be an input to the task, then it is possible that you should alter the configuration of the task to not include it.
+For example, having your integration test configuration including all the unit test classes as a dependency has the effect that all integration tests
+are re-executed when a unit test changes.
+Another option is that the task tracks absolute paths instead of relative paths and the location of the project directory changed on disk.</p>
+</div>
 </div>
 </div>
 </div>
@@ -324,7 +360,7 @@ task you need to resort to comparing those files on disks yourself.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-22 15:01:17 UTC
+Last updated 2017-05-23 08:38:33 UTC
 </div>
 </div>
 </body>
