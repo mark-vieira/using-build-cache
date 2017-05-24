@@ -57,9 +57,10 @@
 <li><a href="#the_case_against_overlapping_outputs">4. The case against overlapping outputs</a></li>
 <li><a href="#debugging_and_diagnosing_cache_misses">5. Debugging and diagnosing cache misses</a>
 <ul class="sectlevel2">
-<li><a href="#how_to_find_errors">5.1. How to find errors</a></li>
+<li><a href="#how_to_find_problems_with_task_output_caching">5.1. How to find problems with task output caching</a></li>
 <li><a href="#helpful_data_for_diagnosing_a_cache_miss">5.2. Helpful data for diagnosing a cache miss</a></li>
 <li><a href="#diagnosing_the_reasons_for_a_cache_miss">5.3. Diagnosing the reasons for a cache miss</a></li>
+<li><a href="#example">5.4. Example</a></li>
 </ul>
 </li>
 <li><a href="#summary">6. Summary</a></li>
@@ -226,19 +227,23 @@ will share outputs between tasks that should have had a different output. If you
 suggest to declare whatever change you expected to trigger the cache miss as an input to the task.</p>
 </div>
 <div class="sect2">
-<h3 id="how_to_find_errors"><a class="anchor" href="#how_to_find_errors"></a>5.1. How to find errors</h3>
-<div class="ulist">
-<ul>
-<li>
-<p>Run build with no changes to see if caching still works</p>
-</li>
-<li>
-<p>Record graphs of execution times and see if it makes sense to you</p>
-</li>
-<li>
-<p>Look a certain types of changes and see if the expected tasks are cached</p>
-</li>
-</ul>
+<h3 id="how_to_find_problems_with_task_output_caching"><a class="anchor" href="#how_to_find_problems_with_task_output_caching"></a>5.1. How to find problems with task output caching</h3>
+<div class="paragraph">
+<p>In order to find existing problems with your usage of task output caching you can do a variety of things.</p>
+</div>
+<div class="paragraph">
+<p>For example you can run a build with the same commit and check that this build is fully cached.
+You probably should make sure that the project and the home directory changes between these builds to detect relocatability problems.</p>
+</div>
+<div class="paragraph">
+<p>We had good experiences with recording execution times of our builds, generate graphs of those and then look at the results.
+You then can look for certain patterns, like a rebuilding everything even though you expected compilation to be cached.</p>
+</div>
+<div class="paragraph">
+<p>You can also make certain changes to your code base manually or automatically and check that the expected set of tasks is cached.</p>
+</div>
+<div class="paragraph">
+<p>If these experiments point to a possible problem with your use of task output caching, you would need to go into diagnosing a cache miss as explained below.</p>
 </div>
 </div>
 <div class="sect2">
@@ -303,6 +308,25 @@ task you need to resort to comparing those files on disks yourself.</p>
 <p>Luckily, you do not have to capture this data yourself - the build scan plugin already takes care of this for you.
 This means that Gradle Enterprise already has the necessary data to diagnose the cache miss when using the build scan plugin.</p>
 </div>
+<div class="imageblock">
+<div class="content">
+<img src="images/task-inputs-comparison.png" alt="task inputs comparison">
+</div>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p><strong>TODO:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Add current GE screenshot showing some differences</p>
+</li>
+</ul>
+</div>
+</blockquote>
+</div>
 </div>
 <div class="sect2">
 <h3 id="diagnosing_the_reasons_for_a_cache_miss"><a class="anchor" href="#diagnosing_the_reasons_for_a_cache_miss"></a>5.3. Diagnosing the reasons for a cache miss</h3>
@@ -347,6 +371,54 @@ are re-executed when a unit test changes.
 Another option is that the task tracks absolute paths instead of relative paths and the location of the project directory changed on disk.</p>
 </div>
 </div>
+<div class="sect2">
+<h3 id="example"><a class="anchor" href="#example"></a>5.4. Example</h3>
+<div class="paragraph">
+<p>We will walk you through the process of diagnosing a cache miss.
+Let&#8217;s say we have build <code>A</code> and build <code>B</code> and we expected all the test tasks for a sub-project <code>sub1</code> to be cached in build <code>B</code> since only a unit test for another sub-project <code>sub2</code> changed.
+Actually, all the tests for the sub-project have been executed.
+Since we have the cascading effect when we have cache misses, we need to find the task which caused the caching chain to fail.
+This can easily be done by filtering for all cacheable tasks which have been executed and then select the first one.
+In our case, it turns out that the tests for the sub-project <code>internal-testing</code> were executed even though there was no code change to this project.
+We start the input property comparison in GE and see that the property <code>classpath</code> changed. This means that some file on the runtime classpath actually did change.
+Looking deeper into this, we actually see that the inputs for the task <code>processResources</code> changed in that project, too.
+Finally, we find this in our build file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">task currentVersionInfo() {
+    doLast {
+        <span class="keyword">def</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>()
+        properties.latestMilestone = version
+        properties.store(<span class="keyword">new</span> <span class="predefined-type">File</span>(generatedResourcesDir, <span class="string"><span class="delimiter">&quot;</span><span class="content">currentVersion.properties</span><span class="delimiter">&quot;</span></span>))
+    }
+}
+
+sourceSets.main.output.dir generatedResourcesDir, <span class="key">builtBy</span>: currentVersionInfo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Since a properties files stored by Java&#8217;s <code>Properties.store</code> method contains a timestamp, this will cause a change to the runtime classpath every time the build runs.
+Note that the compile classpath is not affected since compile avoidance ignores non-class files on the compile classpath.</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p><strong>TODO:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Add GE screenshots</p>
+</li>
+<li>
+<p>Point to section on dealing with volatile inputs</p>
+</li>
+</ul>
+</div>
+</blockquote>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -360,7 +432,7 @@ Another option is that the task tracks absolute paths instead of relative paths 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-23 08:38:33 UTC
+Last updated 2017-05-24 06:48:04 UTC
 </div>
 </div>
 </body>
