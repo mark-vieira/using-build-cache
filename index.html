@@ -43,40 +43,34 @@
 <li><a href="#share_results_between_developers">1.5. Share results between developers</a></li>
 </ul>
 </li>
-<li><a href="#important_concepts">Important concepts</a>
-<ul class="sectlevel1">
-<li><a href="#repeatable_task_outcomes">1. Repeatable task outcomes</a></li>
-<li><a href="#stable_task_inputs">2. Stable task inputs</a></li>
-<li><a href="#normalization">3. Better reuse via input normalization</a>
+<li><a href="#important_concepts">2. Important concepts</a>
 <ul class="sectlevel2">
-<li><a href="#path_sensitivity_and_relocatability">3.1. Path sensitivity and relocatability</a></li>
-<li><a href="#compile_avoidance">3.2. Compile avoidance</a></li>
-<li><a href="#runtime_classpath_normalization">3.3. Runtime classpath normalization</a></li>
+<li><a href="#repeatable_task_outcomes">2.1. Repeatable task outcomes</a></li>
+<li><a href="#stable_task_inputs">2.2. Stable task inputs</a></li>
+<li><a href="#normalization">2.3. Better reuse via input normalization</a></li>
+<li><a href="#the_case_against_overlapping_outputs">2.4. The case against overlapping outputs</a></li>
 </ul>
 </li>
-<li><a href="#the_case_against_overlapping_outputs">4. The case against overlapping outputs</a></li>
-<li><a href="#debugging_and_diagnosing_cache_misses">5. Debugging and diagnosing cache misses</a>
+<li><a href="#debugging_and_diagnosing_cache_misses">3. Debugging and diagnosing cache misses</a>
 <ul class="sectlevel2">
-<li><a href="#how_to_find_problems_with_task_output_caching">5.1. How to find problems with task output caching</a></li>
-<li><a href="#helpful_data_for_diagnosing_a_cache_miss">5.2. Helpful data for diagnosing a cache miss</a></li>
-<li><a href="#diagnosing_the_reasons_for_a_cache_miss">5.3. Diagnosing the reasons for a cache miss</a></li>
-<li><a href="#example">5.4. Example</a></li>
+<li><a href="#how_to_find_problems_with_task_output_caching">3.1. How to find problems with task output caching</a></li>
+<li><a href="#helpful_data_for_diagnosing_a_cache_miss">3.2. Helpful data for diagnosing a cache miss</a></li>
+<li><a href="#diagnosing_the_reasons_for_a_cache_miss">3.3. Diagnosing the reasons for a cache miss</a></li>
+<li><a href="#example">3.4. Example</a></li>
 </ul>
 </li>
-<li><a href="#common_problems_and_their_solutions">6. Common problems and their solutions</a>
+<li><a href="#common_problems_and_their_solutions">4. Common problems and their solutions</a>
 <ul class="sectlevel2">
-<li><a href="#system_file_encoding">6.1. System file encoding</a></li>
-<li><a href="#environment_variable_tracking">6.2. Environment variable tracking</a></li>
-<li><a href="#line_endings">6.3. Line endings</a></li>
-<li><a href="#symbolic_links">6.4. Symbolic links</a></li>
-<li><a href="#java_version_tracking">6.5. Java version tracking</a></li>
-<li><a href="#avoid_changing_inputs_external_to_your_build">6.6. Avoid changing inputs external to your build</a></li>
-<li><a href="#suggestions_for_authoring_your_build">6.7. Suggestions for authoring your build</a></li>
+<li><a href="#system_file_encoding">4.1. System file encoding</a></li>
+<li><a href="#environment_variable_tracking">4.2. Environment variable tracking</a></li>
+<li><a href="#line_endings">4.3. Line endings</a></li>
+<li><a href="#symbolic_links">4.4. Symbolic links</a></li>
+<li><a href="#java_version_tracking">4.5. Java version tracking</a></li>
+<li><a href="#avoid_changing_inputs_external_to_your_build">4.6. Avoid changing inputs external to your build</a></li>
+<li><a href="#suggestions_for_authoring_your_build">4.7. Suggestions for authoring your build</a></li>
 </ul>
 </li>
-<li><a href="#summary">7. Summary</a></li>
-</ul>
-</li>
+<li><a href="#summary">5. Summary</a></li>
 </ul>
 </div>
 </div>
@@ -184,47 +178,43 @@
 </div>
 </div>
 </div>
-<h1 id="important_concepts" class="sect0"><a class="anchor" href="#important_concepts"></a>Important concepts</h1>
 <div class="sect1">
-<h2 id="repeatable_task_outcomes"><a class="anchor" href="#repeatable_task_outcomes"></a>1. Repeatable task outcomes</h2>
-<div class="sectionbody">
-
-</div>
-</div>
-<div class="sect1">
-<h2 id="stable_task_inputs"><a class="anchor" href="#stable_task_inputs"></a>2. Stable task inputs</h2>
-<div class="sectionbody">
-
-</div>
-</div>
-<div class="sect1">
-<h2 id="normalization"><a class="anchor" href="#normalization"></a>3. Better reuse via input normalization</h2>
+<h2 id="important_concepts"><a class="anchor" href="#important_concepts"></a>2. Important concepts</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="path_sensitivity_and_relocatability"><a class="anchor" href="#path_sensitivity_and_relocatability"></a>3.1. Path sensitivity and relocatability</h3>
+<h3 id="repeatable_task_outcomes"><a class="anchor" href="#repeatable_task_outcomes"></a>2.1. Repeatable task outcomes</h3>
 
 </div>
 <div class="sect2">
-<h3 id="compile_avoidance"><a class="anchor" href="#compile_avoidance"></a>3.2. Compile avoidance</h3>
+<h3 id="stable_task_inputs"><a class="anchor" href="#stable_task_inputs"></a>2.2. Stable task inputs</h3>
 
 </div>
 <div class="sect2">
-<h3 id="runtime_classpath_normalization"><a class="anchor" href="#runtime_classpath_normalization"></a>3.3. Runtime classpath normalization</h3>
+<h3 id="normalization"><a class="anchor" href="#normalization"></a>2.3. Better reuse via input normalization</h3>
 <div class="sect3">
-<h4 id="filtering"><a class="anchor" href="#filtering"></a>3.3.1. Filtering</h4>
+<h4 id="path_sensitivity_and_relocatability"><a class="anchor" href="#path_sensitivity_and_relocatability"></a>2.3.1. Path sensitivity and relocatability</h4>
+
+</div>
+<div class="sect3">
+<h4 id="compile_avoidance"><a class="anchor" href="#compile_avoidance"></a>2.3.2. Compile avoidance</h4>
+
+</div>
+<div class="sect3">
+<h4 id="runtime_classpath_normalization"><a class="anchor" href="#runtime_classpath_normalization"></a>2.3.3. Runtime classpath normalization</h4>
+<div class="sect4">
+<h5 id="filtering"><a class="anchor" href="#filtering"></a>Filtering</h5>
 
 </div>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="the_case_against_overlapping_outputs"><a class="anchor" href="#the_case_against_overlapping_outputs"></a>4. The case against overlapping outputs</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="the_case_against_overlapping_outputs"><a class="anchor" href="#the_case_against_overlapping_outputs"></a>2.4. The case against overlapping outputs</h3>
 
 </div>
 </div>
+</div>
 <div class="sect1">
-<h2 id="debugging_and_diagnosing_cache_misses"><a class="anchor" href="#debugging_and_diagnosing_cache_misses"></a>5. Debugging and diagnosing cache misses</h2>
+<h2 id="debugging_and_diagnosing_cache_misses"><a class="anchor" href="#debugging_and_diagnosing_cache_misses"></a>3. Debugging and diagnosing cache misses</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>For using task output caching efficiently it is essential to keep the balance between specifying all the inputs to your
@@ -238,7 +228,7 @@ will share outputs between tasks that should have had a different output. If you
 suggest to declare whatever change you expected to trigger the cache miss as an input to the task.</p>
 </div>
 <div class="sect2">
-<h3 id="how_to_find_problems_with_task_output_caching"><a class="anchor" href="#how_to_find_problems_with_task_output_caching"></a>5.1. How to find problems with task output caching</h3>
+<h3 id="how_to_find_problems_with_task_output_caching"><a class="anchor" href="#how_to_find_problems_with_task_output_caching"></a>3.1. How to find problems with task output caching</h3>
 <div class="paragraph">
 <p>In order to find existing problems with your usage of task output caching you can do a variety of things.</p>
 </div>
@@ -258,7 +248,7 @@ You then can look for certain patterns, like a rebuilding everything even though
 </div>
 </div>
 <div class="sect2">
-<h3 id="helpful_data_for_diagnosing_a_cache_miss"><a class="anchor" href="#helpful_data_for_diagnosing_a_cache_miss"></a>5.2. Helpful data for diagnosing a cache miss</h3>
+<h3 id="helpful_data_for_diagnosing_a_cache_miss"><a class="anchor" href="#helpful_data_for_diagnosing_a_cache_miss"></a>3.2. Helpful data for diagnosing a cache miss</h3>
 <div class="paragraph">
 <p>A cache miss happens when Gradle calculates a build cache key for a task which is different from any of the build cache keys in the cache.
 Only comparing the build cache key on its own does not give much information, so we need to look at some finer grained data to be able to diagnose the cache miss.
@@ -340,7 +330,7 @@ This means that Gradle Enterprise already has the necessary data to diagnose the
 </div>
 </div>
 <div class="sect2">
-<h3 id="diagnosing_the_reasons_for_a_cache_miss"><a class="anchor" href="#diagnosing_the_reasons_for_a_cache_miss"></a>5.3. Diagnosing the reasons for a cache miss</h3>
+<h3 id="diagnosing_the_reasons_for_a_cache_miss"><a class="anchor" href="#diagnosing_the_reasons_for_a_cache_miss"></a>3.3. Diagnosing the reasons for a cache miss</h3>
 <div class="paragraph">
 <p>Having the data from the last section at hand, you should be able to diagnose why the outputs of a certain task were not found in the build cache.
 Since you were expecting more tasks to be cached, you should be able to pinpoint a build which would have produced the artifact under question.</p>
@@ -388,7 +378,7 @@ Another option is that the task tracks absolute paths instead of relative paths 
 </div>
 </div>
 <div class="sect2">
-<h3 id="example"><a class="anchor" href="#example"></a>5.4. Example</h3>
+<h3 id="example"><a class="anchor" href="#example"></a>3.4. Example</h3>
 <div class="paragraph">
 <p>We will walk you through the process of diagnosing a cache miss.
 Let&#8217;s say we have build <code>A</code> and build <code>B</code> and we expected all the test tasks for a sub-project <code>sub1</code> to be cached in build <code>B</code> since only a unit test for another sub-project <code>sub2</code> changed.
@@ -438,10 +428,10 @@ Note that the compile classpath is not affected since compile avoidance ignores 
 </div>
 </div>
 <div class="sect1">
-<h2 id="common_problems_and_their_solutions"><a class="anchor" href="#common_problems_and_their_solutions"></a>6. Common problems and their solutions</h2>
+<h2 id="common_problems_and_their_solutions"><a class="anchor" href="#common_problems_and_their_solutions"></a>4. Common problems and their solutions</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="system_file_encoding"><a class="anchor" href="#system_file_encoding"></a>6.1. System file encoding</h3>
+<h3 id="system_file_encoding"><a class="anchor" href="#system_file_encoding"></a>4.1. System file encoding</h3>
 <div class="paragraph">
 <p>Most Java tools use the system file encoding when no specific encoding is specified.
 This means that running the same build on machines with different file encoding can yield different outputs.
@@ -450,7 +440,7 @@ This can cause incorrect builds. You should always set the file system encoding 
 </div>
 </div>
 <div class="sect2">
-<h3 id="environment_variable_tracking"><a class="anchor" href="#environment_variable_tracking"></a>6.2. Environment variable tracking</h3>
+<h3 id="environment_variable_tracking"><a class="anchor" href="#environment_variable_tracking"></a>4.2. Environment variable tracking</h3>
 <div class="paragraph">
 <p>Gradle does currently not track environment variables for tasks.
 For example for the <code>Test</code> tasks it is completely possible that the outcome depends on a few environment variables.
@@ -493,7 +483,7 @@ For example, the following setup would break caching of <code>Test</code> tasks,
 </div>
 </div>
 <div class="sect2">
-<h3 id="line_endings"><a class="anchor" href="#line_endings"></a>6.3. Line endings</h3>
+<h3 id="line_endings"><a class="anchor" href="#line_endings"></a>4.3. Line endings</h3>
 <div class="paragraph">
 <p>If you are building on different operating systems be aware that some version control systems convert line endings on check-out.
 For example git on Windows by default uses <code>autocrlf=true</code> which converts all line endings to <code>\r\n</code>.
@@ -502,7 +492,7 @@ You should make sure that <code>autocrlf=false</code> across your build machines
 </div>
 </div>
 <div class="sect2">
-<h3 id="symbolic_links"><a class="anchor" href="#symbolic_links"></a>6.4. Symbolic links</h3>
+<h3 id="symbolic_links"><a class="anchor" href="#symbolic_links"></a>4.4. Symbolic links</h3>
 <div class="paragraph">
 <p>Gradle does not store the symbolic link in the build cache but the actual file contents of the destination of the link.
 As a consequence you might have a hard time when trying to re-use outputs which heavily use symbolic links.
@@ -510,7 +500,7 @@ There currently is no workaround for this behavior.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="java_version_tracking"><a class="anchor" href="#java_version_tracking"></a>6.5. Java version tracking</h3>
+<h3 id="java_version_tracking"><a class="anchor" href="#java_version_tracking"></a>4.5. Java version tracking</h3>
 <div class="paragraph">
 <p>Gradle does track the major version of Java as an input for compilation and test execution.
 Currently, it does neither track the vendor nor the minor version.
@@ -556,7 +546,7 @@ Therefore, you can expect differences in the bytecode of compiled Groovy classes
 </div>
 </div>
 <div class="sect2">
-<h3 id="avoid_changing_inputs_external_to_your_build"><a class="anchor" href="#avoid_changing_inputs_external_to_your_build"></a>6.6. Avoid changing inputs external to your build</h3>
+<h3 id="avoid_changing_inputs_external_to_your_build"><a class="anchor" href="#avoid_changing_inputs_external_to_your_build"></a>4.6. Avoid changing inputs external to your build</h3>
 <div class="paragraph">
 <p>If your build is dependent on external dependencies like binary artifacts or dynamic data from a web page you need to make sure that these inputs are consistent throughout your infrastructure.
 When there are some variations between machines then there will be no cache hits.</p>
@@ -574,9 +564,9 @@ One way of locking the changes would be to check in the volatile resource whenev
 </div>
 </div>
 <div class="sect2">
-<h3 id="suggestions_for_authoring_your_build"><a class="anchor" href="#suggestions_for_authoring_your_build"></a>6.7. Suggestions for authoring your build</h3>
+<h3 id="suggestions_for_authoring_your_build"><a class="anchor" href="#suggestions_for_authoring_your_build"></a>4.7. Suggestions for authoring your build</h3>
 <div class="sect3">
-<h4 id="review_usages_of_code_dofirst_code"><a class="anchor" href="#review_usages_of_code_dofirst_code"></a>6.7.1. Review usages of <code>doFirst</code></h4>
+<h4 id="review_usages_of_code_dofirst_code"><a class="anchor" href="#review_usages_of_code_dofirst_code"></a>4.7.1. Review usages of <code>doFirst</code></h4>
 <div class="paragraph">
 <p>Using <code>doFirst</code> from a build script on a cacheable tasks ties you to build script changes since the implementation of the closure comes from the build script.
 If possible, you should use a separate tasks instead.</p>
@@ -612,7 +602,7 @@ jar.dependsOn(configureJar)</code></pre>
 </div>
 </div>
 <div class="sect3">
-<h4 id="build_logic_based_on_the_outcome_of_a_task"><a class="anchor" href="#build_logic_based_on_the_outcome_of_a_task"></a>6.7.2. Build logic based on the outcome of a task</h4>
+<h4 id="build_logic_based_on_the_outcome_of_a_task"><a class="anchor" href="#build_logic_based_on_the_outcome_of_a_task"></a>4.7.2. Build logic based on the outcome of a task</h4>
 <div class="paragraph">
 <p>Do not base build logic on whether a task has been <em>executed</em>.
 In particular you should not assume that the output of a task can only change if it did actually execute.
@@ -622,19 +612,27 @@ Using <code>outputs.upToDateWhen</code> is discouraged and should be better mode
 </div>
 </div>
 <div class="sect3">
-<h4 id="no_overlapping_outputs"><a class="anchor" href="#no_overlapping_outputs"></a>6.7.3. No overlapping outputs</h4>
+<h4 id="overlapping_outputs"><a class="anchor" href="#overlapping_outputs"></a>4.7.3. Overlapping outputs</h4>
 <div class="paragraph">
 <p>If two tasks write to the same output directory or output file they cannot be cached and task output caching will be automatically disabled for the task.
 Gradle&#8217;s built-in tasks are configured in a way that there will not be any overlapping outputs.
 When you add new tasks to your build or re-configure built-in tasks make sure you do not create overlapping outputs for cacheable tasks.
 If you must you can add a <code>Sync</code> task which then would sync the merged outputs into the target directory while the original tasks remain cacheable.</p>
 </div>
+<div class="paragraph">
+<p>Gradle Enterprise will show tasks where caching was disabled for overlapping outputs in the timeline.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/overlapping-outputs-timeline.png" alt="overlapping outputs timeline">
+</div>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="summary"><a class="anchor" href="#summary"></a>7. Summary</h2>
+<h2 id="summary"><a class="anchor" href="#summary"></a>5. Summary</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p><strong>TBC</strong></p>
@@ -644,7 +642,7 @@ If you must you can add a <code>Sync</code> task which then would sync the merge
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-29 17:19:56 UTC
+Last updated 2017-05-29 20:54:26 UTC
 </div>
 </div>
 </body>
