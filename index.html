@@ -63,7 +63,16 @@
 <li><a href="#example">5.4. Example</a></li>
 </ul>
 </li>
-<li><a href="#summary">6. Summary</a></li>
+<li><a href="#common_problems_and_their_solutions">6. Common problems and their solutions</a>
+<ul class="sectlevel2">
+<li><a href="#system_file_encoding">6.1. System file encoding</a></li>
+<li><a href="#environment_variable_tracking">6.2. Environment variable tracking</a></li>
+<li><a href="#line_endings">6.3. Line endings</a></li>
+<li><a href="#symbolic_links">6.4. Symbolic links</a></li>
+<li><a href="#java_version_tracking">6.5. Java version tracking</a></li>
+</ul>
+</li>
+<li><a href="#summary">7. Summary</a></li>
 </ul>
 </li>
 </ul>
@@ -280,7 +289,7 @@ All the things influencing the build cache key can be found in the <a href="http
 </div>
 <div class="paragraph">
 <p>Currently, the build cache key for the task is logged at the info level,
-while information down to the individual input property level is available in the debug log:</p>
+while information down to the individual input property level is available in the info log:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -332,7 +341,12 @@ This means that Gradle Enterprise already has the necessary data to diagnose the
 <h3 id="diagnosing_the_reasons_for_a_cache_miss"><a class="anchor" href="#diagnosing_the_reasons_for_a_cache_miss"></a>5.3. Diagnosing the reasons for a cache miss</h3>
 <div class="paragraph">
 <p>Having the data from the last section at hand, you should be able to diagnose why the outputs of a certain task were not found in the build cache.
-Since you were expecting the task to be cached, you should be able to pinpoint a build which would have produced the artifact under question.</p>
+Since you were expecting more tasks to be cached, you should be able to pinpoint a build which would have produced the artifact under question.</p>
+</div>
+<div class="paragraph">
+<p>Before diving into how to find out why one task has not been loaded from the cache we should first look into which task caused the cache misses.
+There is a cascade effect causing dependent tasks to be executed if one of the tasks earlier in the build is not loaded from the cache and has different outputs.
+You should therefore look at the first cacheable task which was executed and continue investigating there.</p>
 </div>
 <div class="paragraph">
 <p>At first, you should check if the implementation of the task changed. This would mean checking the class names and classloader hashes
@@ -422,7 +436,127 @@ Note that the compile classpath is not affected since compile avoidance ignores 
 </div>
 </div>
 <div class="sect1">
-<h2 id="summary"><a class="anchor" href="#summary"></a>6. Summary</h2>
+<h2 id="common_problems_and_their_solutions"><a class="anchor" href="#common_problems_and_their_solutions"></a>6. Common problems and their solutions</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="system_file_encoding"><a class="anchor" href="#system_file_encoding"></a>6.1. System file encoding</h3>
+<div class="paragraph">
+<p>Most Java tools use the system file encoding when no specific encoding is specified.
+This means that running the same build on machines with different file encoding can yield different outputs.
+Gradle currently does only track that no file encoding has been specified on a task basis - but it does not track the system encoding of the JVM it is using.
+This can cause incorrect builds. You should always set the file system encoding to avoid these kind of problems.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="environment_variable_tracking"><a class="anchor" href="#environment_variable_tracking"></a>6.2. Environment variable tracking</h3>
+<div class="paragraph">
+<p>Gradle does currently not track environment variables for tasks.
+For example for the <code>Test</code> tasks it is completely possible that the outcome depends on a few environment variables.
+To ensure that only the right artifacts are re-used between builds you need to add environment variables as an input to the tasks depending on them.</p>
+</div>
+<div class="paragraph">
+<p>Absolute paths are often passed as environment variables, too. You need to pay attention what you add as an input to the task in this case. If you add the absolute path then it will be very hard to re-use task outputs between different machines.
+You would need to ensure that the absolute path is the same between machines. Most times it makes sense to track the file or the contents of the directory the absolute path points to.
+If the absolute path represents a tool being used it probably makes sense to track the tool version as an input instead.</p>
+</div>
+<div class="paragraph">
+<p>If you are adding conditional logic whether you are building on CI or on a developer machine make sure that this does not break loading task outputs on developer machines from CI.
+For example, the following setup would break caching of <code>Test</code> tasks, since Gradle always would detect the difference in custom task actions:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy"><span class="keyword">if</span> (<span class="predefined-type">System</span>.getenv().containsKey(<span class="string"><span class="delimiter">&quot;</span><span class="content">CI</span><span class="delimiter">&quot;</span></span>) {
+    test.doFirst {
+            println <span class="string"><span class="delimiter">&quot;</span><span class="content">Running test on CI</span><span class="delimiter">&quot;</span></span>
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You should always add the action unconditionally:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">test.doFirst {
+    <span class="keyword">if</span> (<span class="predefined-type">System</span>.getenv().containsKey(<span class="string"><span class="delimiter">&quot;</span><span class="content">CI</span><span class="delimiter">&quot;</span></span>) {
+            println <span class="string"><span class="delimiter">&quot;</span><span class="content">Running test on CI</span><span class="delimiter">&quot;</span></span>
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This way, both the task has the same custom action on CI and on developer builds and its outputs can be re-used if the remaining inputs are the same.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="line_endings"><a class="anchor" href="#line_endings"></a>6.3. Line endings</h3>
+<div class="paragraph">
+<p>If you are building on different operating systems be aware that some version control systems convert line endings on check-out.
+For example git on Windows by default uses <code>autocrlf=true</code> which converts all line endings to <code>\r\n</code>.
+As a consequence, compilation outputs can&#8217;t be re-used on Windows since the input sources are different.
+You should make sure that <code>autocrlf=false</code> across your build machines to ensure optimal build cache usage.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="symbolic_links"><a class="anchor" href="#symbolic_links"></a>6.4. Symbolic links</h3>
+<div class="paragraph">
+<p>Gradle does not store the symbolic link in the build cache but the actual file contents of the destination of the link.
+As a consequence you might have a hard time when trying to re-use outputs which heavily use symbolic links.
+There currently is no workaround for this behavior.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="java_version_tracking"><a class="anchor" href="#java_version_tracking"></a>6.5. Java version tracking</h3>
+<div class="paragraph">
+<p>Gradle does track the major version of Java as an input for compilation and test execution.
+Currently, it does neither track the vendor nor the minor version.
+Still, the vendor and the minor version may influence the bytecode produced by compilation.</p>
+</div>
+<div class="paragraph">
+<p>If you use different JVM vendors for compiling or running Java we strongly suggest that you add the vendor as an input to the corresponding tasks.
+This can be achieved by using the <a href="https://docs.gradle.org/3.5/userguide/more_about_tasks.html#sec:task_input_output_runtime_api">runtime API</a> as shown in the following snippet.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">tasks.withType(AbstractCompile) {
+    inputs.property(<span class="string"><span class="delimiter">&quot;</span><span class="content">java.vendor</span><span class="delimiter">&quot;</span></span>) {
+        <span class="predefined-type">System</span>.getProperty(<span class="string"><span class="delimiter">&quot;</span><span class="content">java.vendor</span><span class="delimiter">&quot;</span></span>)
+    }
+}
+
+tasks.withType(Test) {
+    inputs.property(<span class="string"><span class="delimiter">&quot;</span><span class="content">java.vendor</span><span class="delimiter">&quot;</span></span>) {
+        <span class="predefined-type">System</span>.getProperty(<span class="string"><span class="delimiter">&quot;</span><span class="content">java.vendor</span><span class="delimiter">&quot;</span></span>)
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With respect to tracking the Java minor version there are different competing aspects: support pulling results for developers and having "perfect" results on CI. There are basically two situations when you may want to track the minor version number of Java: compilation and for runtime.</p>
+</div>
+<div class="paragraph">
+<p>For compilation we saw sometimes differences in the produced bytecode for different minor version numbers. The bytecode should still expose the same runtime behavior.
+Note that <a href="https://docs.gradle.org/3.5/userguide/java_plugin.html#sec:java_compile_avoidance">Java compile avoidance</a> will treat this bytecode the same since it extracts the ABI.</p>
+</div>
+<div class="paragraph">
+<p>Treating the minor number always as an input would it make very hard for developers to pull from the build cache. We saw that even in bigger companies different developers on the same team were using different Java minor versions. If you are able to control the environment in a way that everybody in your team and on CI is using exactly the same Java minor version then we suggest that you add the minor version as an input.</p>
+</div>
+<div class="paragraph">
+<p>Note that even without tracking the Java minor version you may have cache misses for developers due to some locally compiled class files which constitute an input to test execution.
+If these outputs made it into the local build cache on this developers machine even a clean will not solve this situation.
+Therefore, the choice for tracking the Java minor version is between sometimes or never re-using outputs between for test execution between different Java minor versions.</p>
+</div>
+<div class="paragraph">
+<p>Note that the compiler infrastructure provided by the JVM used to run Gradle is also used by the Groovy compiler.
+Therefore, you can expect differences in the bytecode of compiled Groovy classes for the same reasons as above and the same suggestions apply.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="summary"><a class="anchor" href="#summary"></a>7. Summary</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p><strong>TBC</strong></p>
@@ -432,7 +566,7 @@ Note that the compile classpath is not affected since compile avoidance ignores 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-24 06:48:04 UTC
+Last updated 2017-05-29 14:18:00 UTC
 </div>
 </div>
 </body>
