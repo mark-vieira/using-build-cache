@@ -70,6 +70,8 @@
 <li><a href="#line_endings">6.3. Line endings</a></li>
 <li><a href="#symbolic_links">6.4. Symbolic links</a></li>
 <li><a href="#java_version_tracking">6.5. Java version tracking</a></li>
+<li><a href="#avoid_changing_inputs_external_to_your_build">6.6. Avoid changing inputs external to your build</a></li>
+<li><a href="#suggestions_for_authoring_your_build">6.7. Suggestions for authoring your build</a></li>
 </ul>
 </li>
 <li><a href="#summary">7. Summary</a></li>
@@ -553,6 +555,82 @@ Therefore, the choice for tracking the Java minor version is between sometimes o
 Therefore, you can expect differences in the bytecode of compiled Groovy classes for the same reasons as above and the same suggestions apply.</p>
 </div>
 </div>
+<div class="sect2">
+<h3 id="avoid_changing_inputs_external_to_your_build"><a class="anchor" href="#avoid_changing_inputs_external_to_your_build"></a>6.6. Avoid changing inputs external to your build</h3>
+<div class="paragraph">
+<p>If your build is dependent on external dependencies like binary artifacts or dynamic data from a web page you need to make sure that these inputs are consistent throughout your infrastructure.
+When there are some variations between machines then there will be no cache hits.</p>
+</div>
+<div class="paragraph">
+<p>Never re-release a non-changing binary dependency with the same version number but different contents: if this happens with a plugin dependency, you will never be able to explain why you don’t see cache reuse between machines (it’s because they have different versions of that artifact).</p>
+</div>
+<div class="paragraph">
+<p>For changing binary dependencies you would need to pay attention whether the same dependency is used throughout your build pipeline.
+You may want to look into the <a href="https://github.com/nebula-plugins/gradle-dependency-lock-plugin">dependency lock plugin</a> or switch to using <a href="https://docs.gradle.org/3.5/userguide/composite_builds.html">composite builds</a> instead.</p>
+</div>
+<div class="paragraph">
+<p>The same is true for depending on volatile external resources, for example a list of released versions.
+One way of locking the changes would be to check in the volatile resource whenever it changes so that the builds only depend on the state in source control and not on the volatile resource itself.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="suggestions_for_authoring_your_build"><a class="anchor" href="#suggestions_for_authoring_your_build"></a>6.7. Suggestions for authoring your build</h3>
+<div class="sect3">
+<h4 id="review_usages_of_code_dofirst_code"><a class="anchor" href="#review_usages_of_code_dofirst_code"></a>6.7.1. Review usages of <code>doFirst</code></h4>
+<div class="paragraph">
+<p>Using <code>doFirst</code> from a build script on a cacheable tasks ties you to build script changes since the implementation of the closure comes from the build script.
+If possible, you should use a separate tasks instead.</p>
+</div>
+<div class="paragraph">
+<p>Modifying inputs or output properties via the runtime API in <code>doFirst</code> is discouraged since these changes will not be detected for up-to-date checks and the build cache.
+Even worse, when the task does not execute then the configuration of the task is actually different from when it executes.
+Instead of using <code>doFirst</code> for modifying the inputs consider using a separate tasks to configure the task under question - a so called configure task.
+E.g., instead of doing</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">jar {
+    doFirst {
+        jar.manifest.mainAttributes(<span class="string"><span class="delimiter">'</span><span class="content">Class-Path</span><span class="delimiter">'</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="inline"><span class="inline-delimiter">${</span>project(<span class="string"><span class="delimiter">'</span><span class="content">:core</span><span class="delimiter">'</span></span>).jar.archivePath.name<span class="inline-delimiter">}</span></span><span class="content"> </span><span class="inline"><span class="inline-delimiter">${</span>project(<span class="string"><span class="delimiter">'</span><span class="content">:baseServices</span><span class="delimiter">'</span></span>).jar.archivePath.name<span class="inline-delimiter">}</span></span><span class="delimiter">&quot;</span></span>)
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>do</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">task configureJar {
+    doLast {
+        jar.manifest.mainAttributes(<span class="string"><span class="delimiter">'</span><span class="content">Class-Path</span><span class="delimiter">'</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="inline"><span class="inline-delimiter">${</span>project(<span class="string"><span class="delimiter">'</span><span class="content">:core</span><span class="delimiter">'</span></span>).jar.archivePath.name<span class="inline-delimiter">}</span></span><span class="content"> </span><span class="inline"><span class="inline-delimiter">${</span>project(<span class="string"><span class="delimiter">'</span><span class="content">:baseServices</span><span class="delimiter">'</span></span>).jar.archivePath.name<span class="inline-delimiter">}</span></span><span class="delimiter">&quot;</span></span>)
+    }
+}
+
+jar.dependsOn(configureJar)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="build_logic_based_on_the_outcome_of_a_task"><a class="anchor" href="#build_logic_based_on_the_outcome_of_a_task"></a>6.7.2. Build logic based on the outcome of a task</h4>
+<div class="paragraph">
+<p>Do not base build logic on whether a task has been <em>executed</em>.
+In particular you should not assume that the output of a task can only change if it did actually execute.
+The outputs could have been loaded from the build cache, too.
+In general, you should work together Gradle&#8217;s up-to-date checks since this will ensure that task output caching has the same view of the task.
+Using <code>outputs.upToDateWhen</code> is discouraged and should be better modelled by adding the right inputs to the task.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="no_overlapping_outputs"><a class="anchor" href="#no_overlapping_outputs"></a>6.7.3. No overlapping outputs</h4>
+<div class="paragraph">
+<p>If two tasks write to the same output directory or output file they cannot be cached and task output caching will be automatically disabled for the task.
+Gradle&#8217;s built-in tasks are configured in a way that there will not be any overlapping outputs.
+When you add new tasks to your build or re-configure built-in tasks make sure you do not create overlapping outputs for cacheable tasks.
+If you must you can add a <code>Sync</code> task which then would sync the merged outputs into the target directory while the original tasks remain cacheable.</p>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -566,7 +644,7 @@ Therefore, you can expect differences in the bytecode of compiled Groovy classes
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-29 14:18:00 UTC
+Last updated 2017-05-29 17:19:56 UTC
 </div>
 </div>
 </body>
