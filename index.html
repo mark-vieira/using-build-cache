@@ -69,7 +69,7 @@
 <li><a href="#java_version_tracking">4.5. Java version tracking</a></li>
 <li><a href="#avoid_changing_inputs_external_to_your_build">4.6. Avoid changing inputs external to your build</a></li>
 <li><a href="#suggestions_for_authoring_your_build">4.7. Suggestions for authoring your build</a></li>
-<li><a href="#volatile_data_in_build_artifacts">4.8. Volatile data in build artifacts</a></li>
+<li><a href="#volatile_data">4.8. Volatile data in build artifacts</a></li>
 <li><a href="#custom_and_third_party_tasks">4.9. Custom and third party tasks</a></li>
 </ul>
 </li>
@@ -306,7 +306,7 @@ Build cache key for task ':compileJava' is 2b220117efa6710f7ab191a0bbe48c00</pre
 </div>
 <div class="paragraph">
 <p>If you want to go into the details of finding out e.g. which classes and jar files constitute the <code>classpath</code> for the <code>compileJava</code>
-task you need to resort to comparing those files on disks yourself.</p>
+task you need to resort to comparing those files on disk yourself.</p>
 </div>
 <div class="paragraph">
 <p>Luckily, you do not have to capture this data yourself - the build scan plugin already takes care of this for you.
@@ -315,6 +315,15 @@ This means that Gradle Enterprise already has the necessary data to diagnose the
 <div class="imageblock">
 <div class="content">
 <img src="images/task-inputs-comparison.png" alt="task inputs comparison">
+</div>
+</div>
+<div class="paragraph">
+<p>Note that it is also possible that task output caching for a cacheable task was disabled.
+When this happens the reason why caching was disabled for the task is reported on the info log level and in the build scan.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/caching-disabled.png" alt="caching disabled">
 </div>
 </div>
 <div class="quoteblock">
@@ -341,7 +350,13 @@ Since you were expecting more tasks to be cached, you should be able to pinpoint
 <div class="paragraph">
 <p>Before diving into how to find out why one task has not been loaded from the cache we should first look into which task caused the cache misses.
 There is a cascade effect causing dependent tasks to be executed if one of the tasks earlier in the build is not loaded from the cache and has different outputs.
-You should therefore look at the first cacheable task which was executed and continue investigating there.</p>
+Therefore, you should therefore at the first cacheable task which was executed and continue investigating there.
+This can be done from the timeline view in a build scan.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/first-non-cached-task.png" alt="first non cached task">
+</div>
 </div>
 <div class="paragraph">
 <p>At first, you should check if the implementation of the task changed. This would mean checking the class names and classloader hashes
@@ -389,7 +404,7 @@ Actually, all the tests for the sub-project have been executed.
 Since we have the cascading effect when we have cache misses, we need to find the task which caused the caching chain to fail.
 This can easily be done by filtering for all cacheable tasks which have been executed and then select the first one.
 In our case, it turns out that the tests for the sub-project <code>internal-testing</code> were executed even though there was no code change to this project.
-We start the input property comparison in GE and see that the property <code>classpath</code> changed. This means that some file on the runtime classpath actually did change.
+We start the input property comparison in Gradle Enterprise and see that the property <code>classpath</code> changed. This means that some file on the runtime classpath actually did change.
 Looking deeper into this, we actually see that the inputs for the task <code>processResources</code> changed in that project, too.
 Finally, we find this in our build file:</p>
 </div>
@@ -407,8 +422,9 @@ sourceSets.main.output.dir generatedResourcesDir, <span class="key">builtBy</spa
 </div>
 </div>
 <div class="paragraph">
-<p>Since a properties files stored by Java&#8217;s <code>Properties.store</code> method contains a timestamp, this will cause a change to the runtime classpath every time the build runs.
-Note that the compile classpath is not affected since compile avoidance ignores non-class files on the compile classpath.</p>
+<p>Since properties files stored by Java&#8217;s <code>Properties.store</code> method contain a timestamp, this will cause a change to the runtime classpath every time the build runs.
+Note that the compile classpath is not affected since compile avoidance ignores non-class files on the compile classpath.
+In order to solve this problem have a look at <a href="#volatile_data">Volatile data in build artifacts</a>.</p>
 </div>
 <div class="quoteblock">
 <blockquote>
@@ -419,9 +435,6 @@ Note that the compile classpath is not affected since compile avoidance ignores 
 <ul>
 <li>
 <p>Add GE screenshots</p>
-</li>
-<li>
-<p>Point to section on dealing with volatile inputs</p>
 </li>
 </ul>
 </div>
@@ -482,16 +495,16 @@ For example, the following setup would break caching of <code>Test</code> tasks,
 </div>
 </div>
 <div class="paragraph">
-<p>This way, both the task has the same custom action on CI and on developer builds and its outputs can be re-used if the remaining inputs are the same.</p>
+<p>This way, the task has the same custom action on CI and on developer builds and its outputs can be re-used if the remaining inputs are the same.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="line_endings"><a class="anchor" href="#line_endings"></a>4.3. Line endings</h3>
 <div class="paragraph">
 <p>If you are building on different operating systems be aware that some version control systems convert line endings on check-out.
-For example git on Windows by default uses <code>autocrlf=true</code> which converts all line endings to <code>\r\n</code>.
+For example, Git on Windows uses <code>autocrlf=true</code> by default which converts all line endings to <code>\r\n</code>.
 As a consequence, compilation outputs can&#8217;t be re-used on Windows since the input sources are different.
-You should make sure that <code>autocrlf=false</code> across your build machines to ensure optimal build cache usage.</p>
+You should make sure to configure <code>autocrlf=false</code> across your build machines to ensure optimal build cache usage.</p>
 </div>
 </div>
 <div class="sect2">
@@ -633,7 +646,7 @@ If you must you can add a <code>Sync</code> task which then would sync the merge
 </div>
 </div>
 <div class="sect2">
-<h3 id="volatile_data_in_build_artifacts"><a class="anchor" href="#volatile_data_in_build_artifacts"></a>4.8. Volatile data in build artifacts</h3>
+<h3 id="volatile_data"><a class="anchor" href="#volatile_data"></a>4.8. Volatile data in build artifacts</h3>
 <div class="paragraph">
 <p>If you include timestamps or other volatile data like Git commit ids in task inputs or outputs then it will be difficult for Gradle to re-use these between builds.
 We will go through different instances of volatile data and how to work around using the build cache anyway.</p>
@@ -784,7 +797,7 @@ In the worst case this can lead to incorrect builds when the plugins try to depe
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-30 15:29:57 UTC
+Last updated 2017-05-30 17:07:04 UTC
 </div>
 </div>
 </body>
