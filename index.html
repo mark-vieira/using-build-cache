@@ -255,7 +255,7 @@ You then can look for certain patterns, like a rebuilding everything even though
 <div class="paragraph">
 <p>A cache miss happens when Gradle calculates a build cache key for a task which is different from any of the build cache keys in the cache.
 Only comparing the build cache key on its own does not give much information, so we need to look at some finer grained data to be able to diagnose the cache miss.
-All the things influencing the build cache key can be found in the <a href="https://docs.gradle.org/nightly/userguide/build_cache.html#sec:task_output_caching_details">userguide</a>.</p>
+All the things influencing the build cache key can be found in the <a href="https://docs.gradle.org/4.0-rc-1/userguide/build_cache.html#sec:task_output_caching_details">userguide</a>.</p>
 </div>
 <div class="paragraph">
 <p>Basically, we can compare the following data, listed from coarse grained to fine grained:</p>
@@ -524,7 +524,7 @@ Still, the vendor and the minor version may influence the bytecode produced by c
 </div>
 <div class="paragraph">
 <p>If you use different JVM vendors for compiling or running Java we strongly suggest that you add the vendor as an input to the corresponding tasks.
-This can be achieved by using the <a href="https://docs.gradle.org/nightly/userguide/more_about_tasks.html#sec:task_input_output_runtime_api">runtime API</a> as shown in the following snippet.</p>
+This can be achieved by using the <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:task_input_output_runtime_api">runtime API</a> as shown in the following snippet.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -546,7 +546,7 @@ tasks.withType(Test) {
 </div>
 <div class="paragraph">
 <p>For compilation we saw sometimes differences in the produced bytecode for different minor version numbers. The bytecode should still expose the same runtime behavior.
-Note that <a href="https://docs.gradle.org/nightly/userguide/java_plugin.html#sec:java_compile_avoidance">Java compile avoidance</a> will treat this bytecode the same since it extracts the ABI.</p>
+Note that <a href="https://docs.gradle.org/4.0-rc-1/userguide/java_plugin.html#sec:java_compile_avoidance">Java compile avoidance</a> will treat this bytecode the same since it extracts the ABI.</p>
 </div>
 <div class="paragraph">
 <p>Treating the minor number always as an input would it make very hard for developers to pull from the build cache. We saw that even in bigger companies different developers on the same team were using different Java minor versions. If you are able to control the environment in a way that everybody in your team and on CI is using exactly the same Java minor version then we suggest that you add the minor version as an input.</p>
@@ -572,7 +572,7 @@ When there are some variations between machines then there will be no cache hits
 </div>
 <div class="paragraph">
 <p>For changing binary dependencies you would need to pay attention whether the same dependency is used throughout your build pipeline.
-You may want to look into the <a href="https://github.com/nebula-plugins/gradle-dependency-lock-plugin">dependency lock plugin</a> or switch to using <a href="https://docs.gradle.org/nightly/userguide/composite_builds.html">composite builds</a> instead.</p>
+You may want to look into the <a href="https://github.com/nebula-plugins/gradle-dependency-lock-plugin">dependency lock plugin</a> or switch to using <a href="https://docs.gradle.org/4.0-rc-1/userguide/composite_builds.html">composite builds</a> instead.</p>
 </div>
 <div class="paragraph">
 <p>The same is true for depending on volatile external resources, for example a list of released versions.
@@ -689,7 +689,7 @@ A task depending on this task output would then not be able to load outputs from
 <div class="sect4">
 <h5 id="input_normalization"><a class="anchor" href="#input_normalization"></a>Input normalization</h5>
 <div class="paragraph">
-<p>This is where <a href="https://docs.gradle.org/nightly/userguide/more_about_tasks.html#sec:configure_input_normalization">input normalization</a> comes into play.
+<p>This is where <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:configure_input_normalization">input normalization</a> comes into play.
 Input normalization is used by Gradle to determine if two task inputs are essentially the same.
 Gradle compares normalized inputs when doing up-to-date checks and when determining the build cache key.
 For a non-specialized input property Gradle doesn&#8217;t do much - it looks at the content of the property or the files and compares those.</p>
@@ -698,10 +698,10 @@ For a non-specialized input property Gradle doesn&#8217;t do much - it looks at 
 <p>As soon as Gradle understands that the input is a runtime classpath it switches to a smarter behavior since the concept of a classpath is known to Gradle.
 For example, for a runtime classpath Gradle inspects the contents of jar files and ignores the timestamps of the entries of the jar file.
 This means that a rebuilt jar file would be considered the same runtime classpath input.
-The details what level of understanding Gradle uses for detecting changes to classpath see the <a href="https://docs.gradle.org/nightly/userguide/more_about_tasks.html#sec:task_input_using_classpath_annotations">userguide</a>.</p>
+The details what level of understanding Gradle uses for detecting changes to classpath see the <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:task_input_using_classpath_annotations">userguide</a>.</p>
 </div>
 <div class="paragraph">
-<p>For a runtime classpath it is possible to provide better insights to Gradle which files are essential to the input by <a href="https://docs.gradle.org/nightly/userguide/more_about_tasks.html#sec:configure_input_normalization">configuring input normalization</a>.</p>
+<p>For a runtime classpath it is possible to provide better insights to Gradle which files are essential to the input by <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:configure_input_normalization">configuring input normalization</a>.</p>
 </div>
 <div class="paragraph">
 <p>Let&#8217;s say you want to add a file <code>build-info.properties</code> to all your produced jar files which contains volatile information about the build, e.g. the timestamp when the build started or some ID to identify the CI job that published the artifact.
@@ -734,7 +734,7 @@ If possible, using input normalization should be the preferred way to address pr
 Note that can be challenging to have tasks reproduce exactly the same byte per byte output for the same inputs.</p>
 </div>
 <div class="paragraph">
-<p>For tar and zip files Gradle can be configured to create <a href="https://docs.gradle.org/nightly/userguide/working_with_files#sec:reproducible_archives">reproducible archives</a>.
+<p>For tar and zip files Gradle can be configured to create <a href="https://docs.gradle.org/4.0-rc-1/userguide/working_with_files#sec:reproducible_archives">reproducible archives</a>.
 This is done by configuring e.g. the <code>Zip</code> task via the following snippet.</p>
 </div>
 <div class="listingblock">
@@ -797,7 +797,7 @@ In the worst case this can lead to incorrect builds when the plugins try to depe
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-30 17:07:04 UTC
+Last updated 2017-05-30 20:07:49 UTC
 </div>
 </div>
 </body>
