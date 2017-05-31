@@ -710,10 +710,10 @@ tasks.withType(Test) {
 </div>
 </div>
 <div class="paragraph">
-<p>With respect to tracking the Java minor version there are different competing aspects: support pulling results for developers and having "perfect" results on CI. There are basically two situations when you may want to track the minor version number of Java: compilation and for runtime.</p>
+<p>With respect to tracking the Java minor version there are different competing aspects: support pulling results for developers and having "perfect" results on CI. There are basically two situations when you may want to track the minor version of Java: for compilation and for runtime.</p>
 </div>
 <div class="paragraph">
-<p>For compilation we saw sometimes differences in the produced bytecode for different minor version numbers. The bytecode should still expose the same runtime behavior.
+<p>For compilation we saw sometimes differences in the produced bytecode for different minor versions. The bytecode should still expose the same runtime behavior.
 Note that <a href="https://docs.gradle.org/4.0-rc-1/userguide/java_plugin.html#sec:java_compile_avoidance">Java compile avoidance</a> will treat this bytecode the same since it extracts the ABI.</p>
 </div>
 <div class="paragraph">
@@ -721,8 +721,8 @@ Note that <a href="https://docs.gradle.org/4.0-rc-1/userguide/java_plugin.html#s
 </div>
 <div class="paragraph">
 <p>Note that even without tracking the Java minor version you may have cache misses for developers due to some locally compiled class files which constitute an input to test execution.
-If these outputs made it into the local build cache on this developers machine even a clean will not solve this situation.
-Therefore, the choice for tracking the Java minor version is between sometimes or never re-using outputs between for test execution between different Java minor versions.</p>
+If these outputs made it into the local build cache on this developers machine even a clean will not solve the situation.
+Therefore, the choice for tracking the Java minor version is between sometimes or never re-using outputs between different Java minor versions for test execution.</p>
 </div>
 <div class="paragraph">
 <p>Note that the compiler infrastructure provided by the JVM used to run Gradle is also used by the Groovy compiler.
@@ -744,7 +744,7 @@ You may want to look into the <a href="https://github.com/nebula-plugins/gradle-
 </div>
 <div class="paragraph">
 <p>The same is true for depending on volatile external resources, for example a list of released versions.
-One way of locking the changes would be to check in the volatile resource whenever it changes so that the builds only depend on the state in source control and not on the volatile resource itself.</p>
+One way of locking the changes would be to check the volatile resource into source control whenever it changes so that the builds only depend on the state in source control and not on the volatile resource itself.</p>
 </div>
 </div>
 <div class="sect2">
@@ -753,11 +753,11 @@ One way of locking the changes would be to check in the volatile resource whenev
 <h4 id="review_usages_of_code_dofirst_code"><a class="anchor" href="#review_usages_of_code_dofirst_code"></a>6.7.1. Review usages of <code>doFirst</code></h4>
 <div class="paragraph">
 <p>Using <code>doFirst</code> from a build script on a cacheable tasks ties you to build script changes since the implementation of the closure comes from the build script.
-If possible, you should use a separate tasks instead.</p>
+If possible, you should use separate tasks instead.</p>
 </div>
 <div class="paragraph">
-<p>Modifying inputs or output properties via the runtime API in <code>doFirst</code> is discouraged since these changes will not be detected for up-to-date checks and the build cache.
-Even worse, when the task does not execute then the configuration of the task is actually different from when it executes.
+<p>Modifying input or output properties via the runtime API in <code>doFirst</code> is discouraged since these changes will not be detected for up-to-date checks and the build cache.
+Even worse, when the task does not execute, then the configuration of the task is actually different from when it executes.
 Instead of using <code>doFirst</code> for modifying the inputs consider using a separate tasks to configure the task under question - a so called configure task.
 E.g., instead of doing</p>
 </div>
@@ -826,10 +826,10 @@ We will go through different instances of volatile data and how to work around u
 You should really think hard if the volatile data is really essential to the output or if it is only there for e.g. auditing purposes.</p>
 </div>
 <div class="paragraph">
-<p>If the volatile input is essential to the output then you can try to make the task using the input cheaper to execute.
+<p>If the volatile input is essential to the output then you can try to make the task using the volatile input cheaper to execute.
 You can do this by splitting the task into two tasks - the first task doing the expensive work which is cacheable and the second task adding the volatile data to the output.
 In this way the output stays the same and the build cache can be used to avoid doing the expensive work.
-For example for building a jar file the expensive part - Java compilation - is already a different task while the jar task itself, which is not cacheable, is cheap.</p>
+For example, for building a jar file the expensive part - Java compilation - is already a different task while the jar task itself, which is not cacheable, is cheap.</p>
 </div>
 <div class="paragraph">
 <p>If it is not an essential part of the output, then you should not declare it as an input.
@@ -846,11 +846,11 @@ It basically means that pulling from the cache might produce a different result 
 If the only difference between the outputs is a timestamp then you can either accept the effect of the build cache or decide that the task is not cacheable after all.</p>
 </div>
 <div class="paragraph">
-<p>The story is different if an other task depend on the volatile outputs of a task.
+<p>The story is different if an other task depends on the volatile outputs of a task.
 For example, re-creating a jar file from the files with the same contents but different modification times yields a different jar file.
 Any other task depending on this jar file as an input file could not be loaded from the cache when the jar file is rebuilt locally.
 This can lead to hard to diagnose cache misses when the consuming build is not a clean build.
-For example when doing incremental builds it is possible that the artifact on disk which is considered up-to-date and
+For example, when doing incremental builds it is possible that the artifact on disk which is considered up-to-date and
 the artifact in the build cache are different even though they are essentially the same.
 A task depending on this task output would then not be able to load outputs from the build cache since the inputs are not exactly the same.</p>
 </div>
@@ -859,21 +859,21 @@ A task depending on this task output would then not be able to load outputs from
 <div class="paragraph">
 <p>This is where <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:configure_input_normalization">input normalization</a> comes into play.
 Input normalization is used by Gradle to determine if two task inputs are essentially the same.
-Gradle compares normalized inputs when doing up-to-date checks and when determining the build cache key.
+Gradle uses normalized inputs when doing up-to-date checks and when determining the build cache key.
 For a non-specialized input property Gradle doesn&#8217;t do much - it looks at the content of the property or the files and compares those.</p>
 </div>
 <div class="paragraph">
 <p>As soon as Gradle understands that the input is a runtime classpath it switches to a smarter behavior since the concept of a classpath is known to Gradle.
 For example, for a runtime classpath Gradle inspects the contents of jar files and ignores the timestamps of the entries of the jar file.
 This means that a rebuilt jar file would be considered the same runtime classpath input.
-The details what level of understanding Gradle uses for detecting changes to classpath see the <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:task_input_using_classpath_annotations">userguide</a>.</p>
+The details what level of understanding Gradle uses for detecting changes to classpaths see the <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:task_input_using_classpath_annotations">userguide</a>.</p>
 </div>
 <div class="paragraph">
 <p>For a runtime classpath it is possible to provide better insights to Gradle which files are essential to the input by <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:configure_input_normalization">configuring input normalization</a>.</p>
 </div>
 <div class="paragraph">
 <p>Let&#8217;s say you want to add a file <code>build-info.properties</code> to all your produced jar files which contains volatile information about the build, e.g. the timestamp when the build started or some ID to identify the CI job that published the artifact.
-This file is only for auditing purposes, and has no effect on the outcome of running tests.
+This file is only used for auditing purposes, and has no effect on the outcome of running tests.
 Nonetheless, this file is part of the runtime classpath for the <code>test</code> task and changes on every build invocation.
 In order to benefit from task output caching again you can add the following configuration to your project.</p>
 </div>
@@ -899,7 +899,7 @@ Note that this will not change the runtime behavior of the <code>test</code> tas
 <div class="paragraph">
 <p>While input normalization provides a way to describe what is essential for the consumer of an artifact, reproducible outputs aim to solve the same problem on the producer side.
 If possible, using input normalization should be the preferred way to address problems with volatile outputs.
-Note that can be challenging to have tasks reproduce exactly the same byte per byte output for the same inputs.</p>
+Note that it can be challenging to have tasks reproduce exactly the same byte per byte output for the same inputs.</p>
 </div>
 <div class="paragraph">
 <p>For tar and zip files Gradle can be configured to create <a href="https://docs.gradle.org/4.0-rc-1/userguide/working_with_files#sec:reproducible_archives">reproducible archives</a>.
@@ -942,14 +942,14 @@ This is in conflict with the Continuous Delivery "build artifacts once" principl
 <h3 id="custom_and_third_party_tasks"><a class="anchor" href="#custom_and_third_party_tasks"></a>6.9. Custom and third party tasks</h3>
 <div class="paragraph">
 <p>If your build contains custom or third party tasks, you should take special care that these don&#8217;t influence the effectiveness of the build cache.
-Special care should be taken for code generation tasks which may produce <a href="#volatile_outputs">Volatile outputs</a>.
+Special care should also be taken for code generation tasks which may produce <a href="#volatile_outputs">Volatile outputs</a>.
 This can happen if the code generator includes e.g. a timestamp in the generated files or depends on the order of the input files.
-Other pitfalls can be the use of `HashMap`s or other data structures without order guarantees in the tasks code.</p>
+Other pitfalls can be the use of `HashMap`s or other data structures without order guarantees in the task&#8217;s code.</p>
 </div>
 <div class="paragraph">
-<p>Note that some third party tasks can even influence cacheability of Gradle&#8217;s built-in tasks.
+<p>Note that some third party plugins can even influence cacheability of Gradle&#8217;s built-in tasks.
 This can happen if they add inputs like absolute paths or volatile data to Gradle&#8217;s built-in tasks via the runtime API.
-In the worst case this can lead to incorrect builds when the plugins try to depend on <a href="#logic_based_on_task_outcome">outcome of a task</a> and do not take <code>FROM-CACHE</code> into account.</p>
+In the worst case this can lead to incorrect builds when the plugins try to depend on the <a href="#logic_based_on_task_outcome">outcome of a task</a> and do not take <code>FROM-CACHE</code> into account.</p>
 </div>
 </div>
 </div>
@@ -965,7 +965,7 @@ In the worst case this can lead to incorrect builds when the plugins try to depe
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-31 08:37:16 UTC
+Last updated 2017-05-31 14:02:41 UTC
 </div>
 </div>
 </body>
