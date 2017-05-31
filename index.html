@@ -53,40 +53,36 @@
 </li>
 <li><a href="#important_concepts">3. Important concepts</a>
 <ul class="sectlevel2">
-<li><a href="#repeatable_task_outcomes">3.1. Repeatable task outcomes</a></li>
-<li><a href="#stable_task_inputs">3.2. Stable task inputs</a></li>
+<li><a href="#stable_task_inputs">3.1. Stable task inputs</a></li>
+<li><a href="#repeatable_task_outcomes">3.2. Repeatable task outcomes</a></li>
+<li><a href="#normalization">3.3. Better reuse via input normalization</a></li>
+<li><a href="#the_case_against_overlapping_outputs">3.4. The case against overlapping outputs</a></li>
+<li><a href="#reuse_of_task_outputs_with_the_same_inputs_but_different_task_paths">3.5. Reuse of task outputs with the same inputs, but different task paths</a></li>
+<li><a href="#non_cacheable_tasks">3.6. Non-cacheable tasks</a></li>
 </ul>
 </li>
-<li><a href="#repeatable_task_outcomes_2">4. Repeatable task outcomes</a>
+<li><a href="#debugging_and_diagnosing_cache_misses">4. Debugging and diagnosing cache misses</a>
 <ul class="sectlevel2">
-<li><a href="#normalization">4.1. Better reuse via input normalization</a></li>
-<li><a href="#the_case_against_overlapping_outputs">4.2. The case against overlapping outputs</a></li>
-<li><a href="#reuse_of_task_outputs_with_the_same_inputs_but_different_task_paths">4.3. Reuse of task outputs with the same inputs, but different task paths</a></li>
-<li><a href="#non_cacheable_tasks">4.4. Non-cacheable tasks</a></li>
+<li><a href="#how_to_find_problems_with_task_output_caching">4.1. How to find problems with task output caching</a></li>
+<li><a href="#helpful_data_for_diagnosing_a_cache_miss">4.2. Helpful data for diagnosing a cache miss</a></li>
+<li><a href="#diagnosing_the_reasons_for_a_cache_miss">4.3. Diagnosing the reasons for a cache miss</a></li>
+<li><a href="#example">4.4. Example</a></li>
 </ul>
 </li>
-<li><a href="#debugging_and_diagnosing_cache_misses">5. Debugging and diagnosing cache misses</a>
+<li><a href="#common_problems_and_their_solutions">5. Common problems and their solutions</a>
 <ul class="sectlevel2">
-<li><a href="#how_to_find_problems_with_task_output_caching">5.1. How to find problems with task output caching</a></li>
-<li><a href="#helpful_data_for_diagnosing_a_cache_miss">5.2. Helpful data for diagnosing a cache miss</a></li>
-<li><a href="#diagnosing_the_reasons_for_a_cache_miss">5.3. Diagnosing the reasons for a cache miss</a></li>
-<li><a href="#example">5.4. Example</a></li>
+<li><a href="#system_file_encoding">5.1. System file encoding</a></li>
+<li><a href="#environment_variable_tracking">5.2. Environment variable tracking</a></li>
+<li><a href="#line_endings">5.3. Line endings</a></li>
+<li><a href="#symbolic_links">5.4. Symbolic links</a></li>
+<li><a href="#java_version_tracking">5.5. Java version tracking</a></li>
+<li><a href="#avoid_changing_inputs_external_to_your_build">5.6. Avoid changing inputs external to your build</a></li>
+<li><a href="#suggestions_for_authoring_your_build">5.7. Suggestions for authoring your build</a></li>
+<li><a href="#volatile_data">5.8. Volatile data in build artifacts</a></li>
+<li><a href="#custom_and_third_party_tasks">5.9. Custom and third party tasks</a></li>
 </ul>
 </li>
-<li><a href="#common_problems_and_their_solutions">6. Common problems and their solutions</a>
-<ul class="sectlevel2">
-<li><a href="#system_file_encoding">6.1. System file encoding</a></li>
-<li><a href="#environment_variable_tracking">6.2. Environment variable tracking</a></li>
-<li><a href="#line_endings">6.3. Line endings</a></li>
-<li><a href="#symbolic_links">6.4. Symbolic links</a></li>
-<li><a href="#java_version_tracking">6.5. Java version tracking</a></li>
-<li><a href="#avoid_changing_inputs_external_to_your_build">6.6. Avoid changing inputs external to your build</a></li>
-<li><a href="#suggestions_for_authoring_your_build">6.7. Suggestions for authoring your build</a></li>
-<li><a href="#volatile_data">6.8. Volatile data in build artifacts</a></li>
-<li><a href="#custom_and_third_party_tasks">6.9. Custom and third party tasks</a></li>
-</ul>
-</li>
-<li><a href="#summary">7. Summary</a></li>
+<li><a href="#summary">6. Summary</a></li>
 </ul>
 </div>
 </div>
@@ -129,10 +125,11 @@
 <div class="sect2">
 <h3 id="share_results_between_ci_builds"><a class="anchor" href="#share_results_between_ci_builds"></a>1.2. Share results between CI builds</h3>
 <div class="paragraph">
-<p>The build cache can do more than going back-and-forth in time: it can also bridge physical distance between computers, allowing to reuse results generated on one machine to be reused by another. A usual first step when introducing the build cache within a team is to enable it for builds running as part of <em>continuous integration</em> only. Using a shared HTTP build cache backend (such as <a href="https://gradle.com/build-cache/">the one provided by Gradle Enterprise</a> can significantly reduce the work CI executors need to do. This translates into faster feedback to developers, and less money spent on the CI infrastructure.</p>
+<p>The build cache can do more than going back-and-forth in time: it can also bridge physical distance between computers, allowing to reuse results generated on one machine to be reused by another. A usual first step when introducing the build cache within a team is to enable it for builds running as part of <em>continuous integration</em> only. Using a shared HTTP build cache backend (such as <a href="https://gradle.com/build-cache/">the one provided by Gradle Enterprise</a>) can significantly reduce the work CI agents need to do. This translates into faster feedback to developers, and less money spent on the CI infrastructure.</p>
 </div>
 <div class="paragraph">
-<p>Using the build cache on CI first makes sense as CI environment is usually easier to control than developer machines. It helps shake out issues with the build that hurt cacheability.</p>
+<p>Using the build cache on CI first makes sense as the environment on CI agents is usually easier to control than developer machines.
+It helps to point out possible issues with the build that hurt cacheability.</p>
 </div>
 <div class="quoteblock">
 <blockquote>
@@ -153,7 +150,7 @@
 <div class="quoteblock">
 <blockquote>
 <div class="paragraph">
-<p><strong>TODO:</strong> Mention moving a Git tag to the latest published commit can help reduce problems with developers pulling too fresh changes.</p>
+<p><strong>TODO:</strong> Mention using a Git branch for latest published commit can help reduce problems with developers pulling too fresh changes.</p>
 </div>
 </blockquote>
 </div>
@@ -178,13 +175,13 @@
 <div class="ulist">
 <ul>
 <li>
-<p>The environment on developer machines is usually not as strictly controlled as it is on CI. Gradle tries to track every relevant bit of information that can influence a task&#8217;s output, but if there are tasks that are incorrectly defined, developers can pollite the cache with corrupted results.</p>
+<p>The environment on developer machines is usually not as strictly controlled as it is on CI. Gradle tries to track every relevant bit of information that can influence a task&#8217;s output, but if there are tasks that are incorrectly defined, developers can pollute the cache with corrupted results.</p>
 </li>
 <li>
-<p>Gradle is in general sage to be used with incremental builds. However, we recommend only uploading to a shared cache from <code>clean</code> builds.</p>
+<p>Gradle is in general safe to be used with incremental builds. However, we recommend only uploading to a shared cache from <code>clean</code> builds.</p>
 </li>
 <li>
-<p>Developers can make changes to task outputs while the task is running even unintentionally, or even unknowingly, like continuing making changes in their IDEs while the build is running. Currently Gradle has no good way to defend against these changes, and will simply cache whatever is in the output directory once the task is finished. This again can lead to corrupted results being uploaded to the shared cache.</p>
+<p>Developers can make changes to task outputs while the task is running even unintentionally, or even unknowingly, like continuing making changes in their IDEs while the build is running. Currently, Gradle has no good way to defend against these changes, and will simply cache whatever is in the output directory once the task is finished. This again can lead to corrupted results being uploaded to the shared cache.</p>
 </li>
 </ul>
 </div>
@@ -200,7 +197,7 @@
 <div class="sect2">
 <h3 id="fully_cached_builds"><a class="anchor" href="#fully_cached_builds"></a>2.1. Fully cached builds</h3>
 <div class="paragraph">
-<p>The most straightforward way to get a feel for what the cache can do for you is to measure the difference between a non-cached build and a <em>fully cached</em> build. This will give you the theoretical limit of how fast builds with the cache can get, if everythign you&#8217;re trying to build has already been built. The easiest way to measure this is using the local cache:</p>
+<p>The most straightforward way to get a feel for what the cache can do for you is to measure the difference between a non-cached build and a <em>fully cached</em> build. This will give you the theoretical limit of how fast builds with the cache can get, if everything you&#8217;re trying to build has already been built. The easiest way to measure this is using the local cache:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -231,7 +228,7 @@ You might have encountered a few cached tasks even in the first of the two build
 </table>
 </div>
 <div class="paragraph">
-<p>Normally, your <em>fully cached</em> build should be significantly faster than the <code>clean</code> build: this is the theoretical limit of how much time using the build cache can save on your particular build when running the tasks that you were running. (We&#8217;ll be covering several common causes for why your build might not produce amazing numbers here for the first try.)</p>
+<p>Normally, your <em>fully cached</em> build should be significantly faster than the <code>clean</code> build: this is the theoretical limit of how much time using the build cache can save on your particular build when running the tasks that you were running. We&#8217;ll be covering several common causes for why your build might not produce amazing numbers here for the first try.</p>
 </div>
 <div class="quoteblock">
 <blockquote>
@@ -267,7 +264,7 @@ You might have encountered a few cached tasks even in the first of the two build
 </blockquote>
 </div>
 <div class="paragraph">
-<p>Measuring complex pipelines requires some more work, and some external tool to collect and process measurements. It&#8217;s important to distinguish parts of the pipeline that caching has no effect, for example the time builds spend waiting in the CI system&#8217;s queue, or time taken by checking out source code from version control.</p>
+<p>Measuring complex pipelines requires some more work, and some external tool to collect and process measurements. It&#8217;s important to distinguish parts of the pipeline that caching has no effect on, for example the time builds spend waiting in the CI system&#8217;s queue, or time taken by checking out source code from version control.</p>
 </div>
 <div class="quoteblock">
 <blockquote>
@@ -287,7 +284,7 @@ You might have encountered a few cached tasks even in the first of the two build
 </blockquote>
 </div>
 <div class="paragraph">
-<p>You can also measure the cumulative time it took to build a changeset, which will give you a sense of the amount of work the CI infrastructure has to excert. The cache&#8217;s effect here is less money spent on CI infrastructure, as you don&#8217;t need as many CI executors to maintain the same number of changes built.</p>
+<p>You can also measure the cumulative time it took to build a changeset, which will give you a sense of the amount of work the CI infrastructure has to excert. The cache&#8217;s effect here is less money spent on CI infrastructure, as you don&#8217;t need as many CI agents to maintain the same number of changes built.</p>
 </div>
 </div>
 <div class="sect2">
@@ -314,21 +311,15 @@ You might have encountered a few cached tasks even in the first of the two build
 <div class="sect1">
 <h2 id="important_concepts"><a class="anchor" href="#important_concepts"></a>3. Important concepts</h2>
 <div class="sectionbody">
-<div class="sect2">
-<h3 id="repeatable_task_outcomes"><a class="anchor" href="#repeatable_task_outcomes"></a>3.1. Repeatable task outcomes</h3>
 <div class="paragraph">
 <p>As we said before, how much of your build gets loaded from cache depends on many factors. In this section we&#8217;ll review some of the tools that are essential for well-cached builds.</p>
 </div>
-</div>
 <div class="sect2">
-<h3 id="stable_task_inputs"><a class="anchor" href="#stable_task_inputs"></a>3.2. Stable task inputs</h3>
+<h3 id="stable_task_inputs"><a class="anchor" href="#stable_task_inputs"></a>3.1. Stable task inputs</h3>
 
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="repeatable_task_outcomes_2"><a class="anchor" href="#repeatable_task_outcomes_2"></a>4. Repeatable task outcomes</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="repeatable_task_outcomes"><a class="anchor" href="#repeatable_task_outcomes"></a>3.2. Repeatable task outcomes</h3>
 <div class="paragraph">
 <p>Imagine that you&#8217;ve just pulled the main branch of your software afresh from version control. CI has already built this particular commit, so the remote cache should be hot: if you ran a build now, every cacheable task would be loaded from cache.</p>
 </div>
@@ -342,20 +333,21 @@ You might have encountered a few cached tasks even in the first of the two build
 <p>However, if your code generator adds a timestamp, the otherwise meaningless change to the code generator&#8217;s inputs <em>will</em> result in different results being produced. Tasks that depend on the code generator&#8217;s output will need to be re-executed. This can result in a cascade of changes rippling through the build, destroying build performance along the way.</p>
 </div>
 <div class="paragraph">
-<p>Gradle can stop the cascade of change requiring everything to be rebuilt when your task is repeatable.</p>
+<p>You can avoid the cascade of change requiring everything to be rebuilt when your task is repeatable.</p>
+</div>
 </div>
 <div class="sect2">
-<h3 id="normalization"><a class="anchor" href="#normalization"></a>4.1. Better reuse via input normalization</h3>
+<h3 id="normalization"><a class="anchor" href="#normalization"></a>3.3. Better reuse via input normalization</h3>
 <div class="sect3">
-<h4 id="path_sensitivity_and_relocatability"><a class="anchor" href="#path_sensitivity_and_relocatability"></a>4.1.1. Path sensitivity and relocatability</h4>
+<h4 id="path_sensitivity_and_relocatability"><a class="anchor" href="#path_sensitivity_and_relocatability"></a>3.3.1. Path sensitivity and relocatability</h4>
 
 </div>
 <div class="sect3">
-<h4 id="compile_avoidance"><a class="anchor" href="#compile_avoidance"></a>4.1.2. Compile avoidance</h4>
+<h4 id="compile_avoidance"><a class="anchor" href="#compile_avoidance"></a>3.3.2. Compile avoidance</h4>
 
 </div>
 <div class="sect3">
-<h4 id="runtime_classpath_normalization"><a class="anchor" href="#runtime_classpath_normalization"></a>4.1.3. Runtime classpath normalization</h4>
+<h4 id="runtime_classpath_normalization"><a class="anchor" href="#runtime_classpath_normalization"></a>3.3.3. Runtime classpath normalization</h4>
 <div class="sect4">
 <h5 id="filtering"><a class="anchor" href="#filtering"></a>Filtering</h5>
 
@@ -363,20 +355,20 @@ You might have encountered a few cached tasks even in the first of the two build
 </div>
 </div>
 <div class="sect2">
-<h3 id="the_case_against_overlapping_outputs"><a class="anchor" href="#the_case_against_overlapping_outputs"></a>4.2. The case against overlapping outputs</h3>
+<h3 id="the_case_against_overlapping_outputs"><a class="anchor" href="#the_case_against_overlapping_outputs"></a>3.4. The case against overlapping outputs</h3>
 
 </div>
 <div class="sect2">
-<h3 id="reuse_of_task_outputs_with_the_same_inputs_but_different_task_paths"><a class="anchor" href="#reuse_of_task_outputs_with_the_same_inputs_but_different_task_paths"></a>4.3. Reuse of task outputs with the same inputs, but different task paths</h3>
+<h3 id="reuse_of_task_outputs_with_the_same_inputs_but_different_task_paths"><a class="anchor" href="#reuse_of_task_outputs_with_the_same_inputs_but_different_task_paths"></a>3.5. Reuse of task outputs with the same inputs, but different task paths</h3>
 
 </div>
 <div class="sect2">
-<h3 id="non_cacheable_tasks"><a class="anchor" href="#non_cacheable_tasks"></a>4.4. Non-cacheable tasks</h3>
+<h3 id="non_cacheable_tasks"><a class="anchor" href="#non_cacheable_tasks"></a>3.6. Non-cacheable tasks</h3>
 <div class="paragraph">
 <p>We&#8217;ve been talking quite a bit about cacheable tasks, which implies there are non-cacheable ones, too. If caching task outputs is as awesome as it sounds, why not cache every task?</p>
 </div>
 <div class="paragraph">
-<p>There are tasks that are definitely worth caching: tasks that do complex, repeatable processing and produce moderate amounts of output. Compilation tasks are usually ideal candidates for caching. At the other end of the spectrum lie I/O-heavy tasks, like <code>Copy</code> and <code>Sync</code>, Moving files around locally typically cannot be sped up by copying them from a cache. If we did so, we would even waste good resources on storing all those redundant results in the cache.</p>
+<p>There are tasks that are definitely worth caching: tasks that do complex, repeatable processing and produce moderate amounts of output. Compilation tasks are usually ideal candidates for caching. At the other end of the spectrum lie I/O-heavy tasks, like <code>Copy</code> and <code>Sync</code>. Moving files around locally typically cannot be sped up by copying them from a cache. If we did so, we would even waste good resources on storing all those redundant results in the cache.</p>
 </div>
 <div class="paragraph">
 <p>Most tasks are either obviously worth caching, or obviously not. For those in-between a good rule of thumb is to see if downloading results would be significantly faster than producing them locally.</p>
@@ -385,7 +377,7 @@ You might have encountered a few cached tasks even in the first of the two build
 </div>
 </div>
 <div class="sect1">
-<h2 id="debugging_and_diagnosing_cache_misses"><a class="anchor" href="#debugging_and_diagnosing_cache_misses"></a>5. Debugging and diagnosing cache misses</h2>
+<h2 id="debugging_and_diagnosing_cache_misses"><a class="anchor" href="#debugging_and_diagnosing_cache_misses"></a>4. Debugging and diagnosing cache misses</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>For using task output caching efficiently it is essential to keep the balance between specifying all the inputs to your
@@ -399,7 +391,7 @@ will share outputs between tasks that should have had a different output. If you
 suggest to declare whatever change you expected to trigger the cache miss as an input to the task.</p>
 </div>
 <div class="sect2">
-<h3 id="how_to_find_problems_with_task_output_caching"><a class="anchor" href="#how_to_find_problems_with_task_output_caching"></a>5.1. How to find problems with task output caching</h3>
+<h3 id="how_to_find_problems_with_task_output_caching"><a class="anchor" href="#how_to_find_problems_with_task_output_caching"></a>4.1. How to find problems with task output caching</h3>
 <div class="paragraph">
 <p>In order to find existing problems with your usage of task output caching you can do a variety of things.</p>
 </div>
@@ -419,7 +411,7 @@ You then can look for certain patterns, like a rebuilding everything even though
 </div>
 </div>
 <div class="sect2">
-<h3 id="helpful_data_for_diagnosing_a_cache_miss"><a class="anchor" href="#helpful_data_for_diagnosing_a_cache_miss"></a>5.2. Helpful data for diagnosing a cache miss</h3>
+<h3 id="helpful_data_for_diagnosing_a_cache_miss"><a class="anchor" href="#helpful_data_for_diagnosing_a_cache_miss"></a>4.2. Helpful data for diagnosing a cache miss</h3>
 <div class="paragraph">
 <p>A cache miss happens when Gradle calculates a build cache key for a task which is different from any of the build cache keys in the cache.
 Only comparing the build cache key on its own does not give much information, so we need to look at some finer grained data to be able to diagnose the cache miss.
@@ -510,7 +502,7 @@ When this happens the reason why caching was disabled for the task is reported o
 </div>
 </div>
 <div class="sect2">
-<h3 id="diagnosing_the_reasons_for_a_cache_miss"><a class="anchor" href="#diagnosing_the_reasons_for_a_cache_miss"></a>5.3. Diagnosing the reasons for a cache miss</h3>
+<h3 id="diagnosing_the_reasons_for_a_cache_miss"><a class="anchor" href="#diagnosing_the_reasons_for_a_cache_miss"></a>4.3. Diagnosing the reasons for a cache miss</h3>
 <div class="paragraph">
 <p>Having the data from the last section at hand, you should be able to diagnose why the outputs of a certain task were not found in the build cache.
 Since you were expecting more tasks to be cached, you should be able to pinpoint a build which would have produced the artifact under question.</p>
@@ -564,7 +556,7 @@ Another option is that the task tracks absolute paths instead of relative paths 
 </div>
 </div>
 <div class="sect2">
-<h3 id="example"><a class="anchor" href="#example"></a>5.4. Example</h3>
+<h3 id="example"><a class="anchor" href="#example"></a>4.4. Example</h3>
 <div class="paragraph">
 <p>We will walk you through the process of diagnosing a cache miss.
 Let&#8217;s say we have build <code>A</code> and build <code>B</code> and we expected all the test tasks for a sub-project <code>sub1</code> to be cached in build <code>B</code> since only a unit test for another sub-project <code>sub2</code> changed.
@@ -612,10 +604,10 @@ In order to solve this problem have a look at <a href="#volatile_data">Volatile 
 </div>
 </div>
 <div class="sect1">
-<h2 id="common_problems_and_their_solutions"><a class="anchor" href="#common_problems_and_their_solutions"></a>6. Common problems and their solutions</h2>
+<h2 id="common_problems_and_their_solutions"><a class="anchor" href="#common_problems_and_their_solutions"></a>5. Common problems and their solutions</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="system_file_encoding"><a class="anchor" href="#system_file_encoding"></a>6.1. System file encoding</h3>
+<h3 id="system_file_encoding"><a class="anchor" href="#system_file_encoding"></a>5.1. System file encoding</h3>
 <div class="paragraph">
 <p>Most Java tools use the system file encoding when no specific encoding is specified.
 This means that running the same build on machines with different file encoding can yield different outputs.
@@ -624,7 +616,7 @@ This can cause incorrect builds. You should always set the file system encoding 
 </div>
 </div>
 <div class="sect2">
-<h3 id="environment_variable_tracking"><a class="anchor" href="#environment_variable_tracking"></a>6.2. Environment variable tracking</h3>
+<h3 id="environment_variable_tracking"><a class="anchor" href="#environment_variable_tracking"></a>5.2. Environment variable tracking</h3>
 <div class="paragraph">
 <p>Gradle does currently not track environment variables for tasks.
 For example for the <code>Test</code> tasks it is completely possible that the outcome depends on a few environment variables.
@@ -667,7 +659,7 @@ For example, the following setup would break caching of <code>Test</code> tasks,
 </div>
 </div>
 <div class="sect2">
-<h3 id="line_endings"><a class="anchor" href="#line_endings"></a>6.3. Line endings</h3>
+<h3 id="line_endings"><a class="anchor" href="#line_endings"></a>5.3. Line endings</h3>
 <div class="paragraph">
 <p>If you are building on different operating systems be aware that some version control systems convert line endings on check-out.
 For example, Git on Windows uses <code>autocrlf=true</code> by default which converts all line endings to <code>\r\n</code>.
@@ -676,7 +668,7 @@ You should make sure to configure <code>autocrlf=false</code> across your build 
 </div>
 </div>
 <div class="sect2">
-<h3 id="symbolic_links"><a class="anchor" href="#symbolic_links"></a>6.4. Symbolic links</h3>
+<h3 id="symbolic_links"><a class="anchor" href="#symbolic_links"></a>5.4. Symbolic links</h3>
 <div class="paragraph">
 <p>Gradle does not store the symbolic link in the build cache but the actual file contents of the destination of the link.
 As a consequence you might have a hard time when trying to re-use outputs which heavily use symbolic links.
@@ -684,7 +676,7 @@ There currently is no workaround for this behavior.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="java_version_tracking"><a class="anchor" href="#java_version_tracking"></a>6.5. Java version tracking</h3>
+<h3 id="java_version_tracking"><a class="anchor" href="#java_version_tracking"></a>5.5. Java version tracking</h3>
 <div class="paragraph">
 <p>Gradle does track the major version of Java as an input for compilation and test execution.
 Currently, it does neither track the vendor nor the minor version.
@@ -730,7 +722,7 @@ Therefore, you can expect differences in the bytecode of compiled Groovy classes
 </div>
 </div>
 <div class="sect2">
-<h3 id="avoid_changing_inputs_external_to_your_build"><a class="anchor" href="#avoid_changing_inputs_external_to_your_build"></a>6.6. Avoid changing inputs external to your build</h3>
+<h3 id="avoid_changing_inputs_external_to_your_build"><a class="anchor" href="#avoid_changing_inputs_external_to_your_build"></a>5.6. Avoid changing inputs external to your build</h3>
 <div class="paragraph">
 <p>If your build is dependent on external dependencies like binary artifacts or dynamic data from a web page you need to make sure that these inputs are consistent throughout your infrastructure.
 When there are some variations between machines then there will be no cache hits.</p>
@@ -748,9 +740,9 @@ One way of locking the changes would be to check the volatile resource into sour
 </div>
 </div>
 <div class="sect2">
-<h3 id="suggestions_for_authoring_your_build"><a class="anchor" href="#suggestions_for_authoring_your_build"></a>6.7. Suggestions for authoring your build</h3>
+<h3 id="suggestions_for_authoring_your_build"><a class="anchor" href="#suggestions_for_authoring_your_build"></a>5.7. Suggestions for authoring your build</h3>
 <div class="sect3">
-<h4 id="review_usages_of_code_dofirst_code"><a class="anchor" href="#review_usages_of_code_dofirst_code"></a>6.7.1. Review usages of <code>doFirst</code></h4>
+<h4 id="review_usages_of_code_dofirst_code"><a class="anchor" href="#review_usages_of_code_dofirst_code"></a>5.7.1. Review usages of <code>doFirst</code></h4>
 <div class="paragraph">
 <p>Using <code>doFirst</code> from a build script on a cacheable tasks ties you to build script changes since the implementation of the closure comes from the build script.
 If possible, you should use separate tasks instead.</p>
@@ -786,7 +778,7 @@ jar.dependsOn(configureJar)</code></pre>
 </div>
 </div>
 <div class="sect3">
-<h4 id="logic_based_on_task_outcome"><a class="anchor" href="#logic_based_on_task_outcome"></a>6.7.2. Build logic based on the outcome of a task</h4>
+<h4 id="logic_based_on_task_outcome"><a class="anchor" href="#logic_based_on_task_outcome"></a>5.7.2. Build logic based on the outcome of a task</h4>
 <div class="paragraph">
 <p>Do not base build logic on whether a task has been <em>executed</em>.
 In particular you should not assume that the output of a task can only change if it did actually execute.
@@ -796,7 +788,7 @@ Using <code>outputs.upToDateWhen</code> is discouraged and should be better mode
 </div>
 </div>
 <div class="sect3">
-<h4 id="overlapping_outputs"><a class="anchor" href="#overlapping_outputs"></a>6.7.3. Overlapping outputs</h4>
+<h4 id="overlapping_outputs"><a class="anchor" href="#overlapping_outputs"></a>5.7.3. Overlapping outputs</h4>
 <div class="paragraph">
 <p>If two tasks write to the same output directory or output file they cannot be cached and task output caching will be automatically disabled for the task.
 Gradle&#8217;s built-in tasks are configured in a way that there will not be any overlapping outputs.
@@ -814,13 +806,13 @@ If you must you can add a <code>Sync</code> task which then would sync the merge
 </div>
 </div>
 <div class="sect2">
-<h3 id="volatile_data"><a class="anchor" href="#volatile_data"></a>6.8. Volatile data in build artifacts</h3>
+<h3 id="volatile_data"><a class="anchor" href="#volatile_data"></a>5.8. Volatile data in build artifacts</h3>
 <div class="paragraph">
 <p>If you include timestamps or other volatile data like Git commit ids in task inputs or outputs then it will be difficult for Gradle to re-use these between builds.
 We will go through different instances of volatile data and how to work around using the build cache anyway.</p>
 </div>
 <div class="sect3">
-<h4 id="volatile_inputs"><a class="anchor" href="#volatile_inputs"></a>6.8.1. Volatile inputs</h4>
+<h4 id="volatile_inputs"><a class="anchor" href="#volatile_inputs"></a>5.8.1. Volatile inputs</h4>
 <div class="paragraph">
 <p>If you use a volatile input like a timestamp as an input property for a task, then there is nothing Gradle can do to make the task cacheable.
 You should really think hard if the volatile data is really essential to the output or if it is only there for e.g. auditing purposes.</p>
@@ -838,7 +830,7 @@ Most times though, the input will be part of the output.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="volatile_outputs"><a class="anchor" href="#volatile_outputs"></a>6.8.2. Volatile outputs</h4>
+<h4 id="volatile_outputs"><a class="anchor" href="#volatile_outputs"></a>5.8.2. Volatile outputs</h4>
 <div class="paragraph">
 <p>Having tasks which generate different outputs for the same inputs can pose a challenge for the effective use of task output caching.
 If the task output containing the volatile data is not used by any other task then the effect is very limited.
@@ -924,7 +916,7 @@ If possible, you should avoid going down that route.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="limit_the_effect_of_volatile_data"><a class="anchor" href="#limit_the_effect_of_volatile_data"></a>6.8.3. Limit the effect of volatile data</h4>
+<h4 id="limit_the_effect_of_volatile_data"><a class="anchor" href="#limit_the_effect_of_volatile_data"></a>5.8.3. Limit the effect of volatile data</h4>
 <div class="paragraph">
 <p>If none of the described solutions for dealing with volatile data work for you, you should still be able to limit the effect of volatile data on effective use of the build cache.
 This can be done by adding the volatile data later to the outputs as described in <a id="volatile_inputs"></a>.
@@ -939,7 +931,7 @@ This is in conflict with the Continuous Delivery "build artifacts once" principl
 </div>
 </div>
 <div class="sect2">
-<h3 id="custom_and_third_party_tasks"><a class="anchor" href="#custom_and_third_party_tasks"></a>6.9. Custom and third party tasks</h3>
+<h3 id="custom_and_third_party_tasks"><a class="anchor" href="#custom_and_third_party_tasks"></a>5.9. Custom and third party tasks</h3>
 <div class="paragraph">
 <p>If your build contains custom or third party tasks, you should take special care that these don&#8217;t influence the effectiveness of the build cache.
 Special care should also be taken for code generation tasks which may produce <a href="#volatile_outputs">Volatile outputs</a>.
@@ -955,7 +947,7 @@ In the worst case this can lead to incorrect builds when the plugins try to depe
 </div>
 </div>
 <div class="sect1">
-<h2 id="summary"><a class="anchor" href="#summary"></a>7. Summary</h2>
+<h2 id="summary"><a class="anchor" href="#summary"></a>6. Summary</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p><strong>TBC</strong></p>
@@ -965,7 +957,7 @@ In the worst case this can lead to incorrect builds when the plugins try to depe
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-31 14:02:41 UTC
+Last updated 2017-05-31 14:50:39 UTC
 </div>
 </div>
 </body>
