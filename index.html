@@ -54,7 +54,7 @@
 <li><a href="#important_concepts">3. Important concepts</a>
 <ul class="sectlevel2">
 <li><a href="#stable_task_inputs">3.1. Stable task inputs</a></li>
-<li><a href="#repeatable_task_outcomes">3.2. Repeatable task outcomes</a></li>
+<li><a href="#repeatable_task_outputs">3.2. Repeatable task outputs</a></li>
 <li><a href="#normalization">3.3. Better reuse via input normalization</a></li>
 <li><a href="#the_case_against_overlapping_outputs">3.4. The case against overlapping outputs</a></li>
 <li><a href="#reuse_of_task_outputs_with_the_same_inputs_but_different_task_paths">3.5. Reuse of task outputs with the same inputs, but different task paths</a></li>
@@ -316,10 +316,25 @@ You might have encountered a few cached tasks even in the first of the two build
 </div>
 <div class="sect2">
 <h3 id="stable_task_inputs"><a class="anchor" href="#stable_task_inputs"></a>3.1. Stable task inputs</h3>
-
+<div class="paragraph">
+<p>Gradle provides already very good support for avoiding work that has already been done in the previous build with incremental build.
+When running the same build twice you should expect all incremental tasks up to date.
+If some incremental tasks are out of date on the second run there are some inputs which are not stable between builds - we will also call this inputs volatile.
+An example of a volatile input would be a timestamp in a file or as an input property of some task.
+Tasks which are not up-to-date on a second run of the same build will also be never pulled from the cache.</p>
+</div>
+<div class="paragraph">
+<p>If all expensive tasks are already up-to-date on the second run then you can go on to the next experiment.
+This would be to activate the local build cache and run a clean build twice.
+On the second run all cacheable tasks should have been loaded from the build cache.
+If this isn&#8217;t the case then you can never expect to pull the offending tasks from the build cache.</p>
+</div>
+<div class="paragraph">
+<p>Therefore, it is important that if you do not change something in your build, e.g. your sources, then the task inputs for cacheable tasks should be stable, i.e. stay the same.</p>
+</div>
 </div>
 <div class="sect2">
-<h3 id="repeatable_task_outcomes"><a class="anchor" href="#repeatable_task_outcomes"></a>3.2. Repeatable task outcomes</h3>
+<h3 id="repeatable_task_outputs"><a class="anchor" href="#repeatable_task_outputs"></a>3.2. Repeatable task outputs</h3>
 <div class="paragraph">
 <p>Imagine that you&#8217;ve just pulled the main branch of your software afresh from version control. CI has already built this particular commit, so the remote cache should be hot: if you ran a build now, every cacheable task would be loaded from cache.</p>
 </div>
@@ -338,25 +353,100 @@ You might have encountered a few cached tasks even in the first of the two build
 </div>
 <div class="sect2">
 <h3 id="normalization"><a class="anchor" href="#normalization"></a>3.3. Better reuse via input normalization</h3>
+<div class="paragraph">
+<p>A variation of stable build inputs is that you have build inputs which are essentially the same but not byte for byte.
+This is where <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:configure_input_normalization">input normalization</a> comes into play.
+Input normalization is used by Gradle to determine if two task inputs are essentially the same.
+Gradle uses normalized inputs when doing up-to-date checks and when determining the build cache key.</p>
+</div>
+<div class="paragraph">
+<p>When comparing two file collections Gradle needs to look at two aspects from each file: the file path and the file contents.
+The consumer of the file collection needs to declare what about a file is essential with respect to these two aspects.</p>
+</div>
 <div class="sect3">
 <h4 id="path_sensitivity_and_relocatability"><a class="anchor" href="#path_sensitivity_and_relocatability"></a>3.3.1. Path sensitivity and relocatability</h4>
-
+<div class="paragraph">
+<p>Task having file collections as inputs can declare the parts of a file path what are essential to them - this is called the <em>path sensitivity</em> of the input.
+For example, the class file produced by the Java compiler is dependent on the file name of the Java source file and does not depended on other parts of the file path.
+Therefore, the path sensitivity for the sources of the <code>JavaCompile</code> task is <code>NAME_ONLY</code>.
+Only the normalized paths of Java sources - the file name - would be considered an input to the <code>JavaCompile</code> task.</p>
+</div>
+<div class="paragraph">
+<p>In order to re-use task outputs between different build machines, the normalized file paths need to agree between tasks of the different workspaces.
+This only works if the path sensitivity of its inputs is <code>NONE</code>, <code>NAME_ONLY</code> or <code>RELATIVE</code>.
+Absolute paths cannot be relocated between different build machines in general.
+Trying to do so would require everyone trying to re-use the outputs built on one machine to have its workspace and all the tools used by the build in the same location.
+This is highly impractical. A task or its inputs are called relocateable if all of the file inputs have a relocatable path sensitivity.</p>
+</div>
+<div class="paragraph">
+<p>Cacheable tasks always should be relocateable and we made sure that this is true for all tasks which ship with Gradle.</p>
+</div>
 </div>
 <div class="sect3">
 <h4 id="compile_avoidance"><a class="anchor" href="#compile_avoidance"></a>3.3.2. Compile avoidance</h4>
-
+<div class="paragraph">
+<p>Java compilation is only affected by changes to the ABI of the compile classpath.
+Gradle has a deep understanding of what a compile classpath is and therefore uses sophisticated normalization strategy for it.
+Task outputs can be re-used as long the the ABI of the classes on the compile classpath stays the same.
+This enables Gradle to avoid Java compilation by using incremental builds or the build cache.
+For more information on compile avoidance see the corresponding section in the <a href="https://docs.gradle.org/4.0-rc-1/userguide/java_plugin.html#sec:java_compile_avoidance">userguide</a>.</p>
+</div>
 </div>
 <div class="sect3">
 <h4 id="runtime_classpath_normalization"><a class="anchor" href="#runtime_classpath_normalization"></a>3.3.3. Runtime classpath normalization</h4>
+<div class="paragraph">
+<p>Similar to compile avoidance, Gradle does understand the concept of a runtime classpath and uses a tailored input normalization to avoid running e.g. tests.
+For example, for a runtime classpath Gradle inspects the contents of jar files and ignores the timestamps of the entries of the jar file.
+This means that a rebuilt jar file would be considered the same runtime classpath input.
+For details on what level of understanding Gradle has for detecting changes to classpaths see the <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:task_input_using_classpath_annotations">userguide</a>.</p>
+</div>
 <div class="sect4">
 <h5 id="filtering"><a class="anchor" href="#filtering"></a>Filtering</h5>
-
+<div class="paragraph">
+<p>For a runtime classpath it is even possible to provide better insights to Gradle which files are essential to the input by <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:configure_input_normalization">configuring input normalization</a>.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s say you want to add a file <code>build-info.properties</code> to all your produced jar files which contains volatile information about the build, e.g. the timestamp when the build started or some ID to identify the CI job that published the artifact.
+This file is only used for auditing purposes, and has no effect on the outcome of running tests.
+Nonetheless, this file is part of the runtime classpath for the <code>test</code> task and changes on every build invocation.
+In order to benefit from task output caching again you can add the following configuration to your project.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">normalization {
+    runtimeClasspath {
+        ignore <span class="string"><span class="delimiter">&quot;</span><span class="content">build-info.properties</span><span class="delimiter">&quot;</span></span>
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The effect of this configuration would be that changes to <code>build-info.properties</code> would be ignored for up-to-date checks and build cache key calculations.
+Note that this will not change the runtime behavior of the <code>test</code> task - i.e. any test is still able to load <code>build-info.properties</code> and the runtime classpath is still the same as before.</p>
+</div>
 </div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="the_case_against_overlapping_outputs"><a class="anchor" href="#the_case_against_overlapping_outputs"></a>3.4. The case against overlapping outputs</h3>
-
+<div class="paragraph">
+<p>If two tasks write to the same output directory or output file it is difficult for Gradle to determine which output belongs to which task.
+It is also hard to automatically remove stale output files for the same reason.
+Tasks which have dedicated output directories which do not overlap are much easier to understand to Gradle.</p>
+</div>
+<div class="paragraph">
+<p>Moreover, task output caching will always restore the whole output directory of a task from the cache.
+For this reason, tasks whose output directories overlap with each other cannot be cached and task output caching will be automatically disabled for the task.
+Gradle&#8217;s built-in tasks are configured in a way that there will not be any overlapping outputs.</p>
+</div>
+<div class="paragraph">
+<p>Gradle Enterprise will show tasks where caching was disabled for overlapping outputs in the timeline.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/overlapping-outputs-timeline.png" alt="overlapping outputs timeline">
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="reuse_of_task_outputs_with_the_same_inputs_but_different_task_paths"><a class="anchor" href="#reuse_of_task_outputs_with_the_same_inputs_but_different_task_paths"></a>3.5. Reuse of task outputs with the same inputs, but different task paths</h3>
@@ -957,7 +1047,7 @@ In the worst case this can lead to incorrect builds when the plugins try to depe
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-31 14:50:39 UTC
+Last updated 2017-06-01 19:44:23 UTC
 </div>
 </div>
 </body>
