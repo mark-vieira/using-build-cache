@@ -61,28 +61,36 @@
 <li><a href="#non_cacheable_tasks">3.6. Non-cacheable tasks</a></li>
 </ul>
 </li>
-<li><a href="#debugging_and_diagnosing_cache_misses">4. Debugging and diagnosing cache misses</a>
+<li><a href="#caching_java_projects">4. Caching Java projects</a>
 <ul class="sectlevel2">
-<li><a href="#how_to_find_problems_with_task_output_caching">4.1. How to find problems with task output caching</a></li>
-<li><a href="#helpful_data_for_diagnosing_a_cache_miss">4.2. Helpful data for diagnosing a cache miss</a></li>
-<li><a href="#diagnosing_cache_miss">4.3. Diagnosing the reasons for a cache miss</a></li>
-<li><a href="#example">4.4. Example</a></li>
+<li><a href="#java_compilation">4.1. Java compilation</a></li>
+<li><a href="#unit_test_execution">4.2. Unit test execution</a></li>
+<li><a href="#integration_test_execution">4.3. Integration test execution</a></li>
+<li><a href="#enable_caching_for_code_buildsrc_code">4.4. Enable caching for <code>buildSrc</code></a></li>
 </ul>
 </li>
-<li><a href="#common-problems">5. Common problems and their solutions</a>
+<li><a href="#debugging_and_diagnosing_cache_misses">5. Debugging and diagnosing cache misses</a>
 <ul class="sectlevel2">
-<li><a href="#system_file_encoding">5.1. System file encoding</a></li>
-<li><a href="#environment_variable_tracking">5.2. Environment variable tracking</a></li>
-<li><a href="#line_endings">5.3. Line endings</a></li>
-<li><a href="#symbolic_links">5.4. Symbolic links</a></li>
-<li><a href="#java_version_tracking">5.5. Java version tracking</a></li>
-<li><a href="#avoid_changing_inputs_external_to_your_build">5.6. Avoid changing inputs external to your build</a></li>
-<li><a href="#suggestions_for_authoring_your_build">5.7. Suggestions for authoring your build</a></li>
-<li><a href="#achieving_stable_task_inputs">5.8. Achieving stable task inputs</a></li>
-<li><a href="#custom_and_third_party_tasks">5.9. Custom and third party tasks</a></li>
+<li><a href="#how_to_find_problems_with_task_output_caching">5.1. How to find problems with task output caching</a></li>
+<li><a href="#helpful_data_for_diagnosing_a_cache_miss">5.2. Helpful data for diagnosing a cache miss</a></li>
+<li><a href="#diagnosing_cache_miss">5.3. Diagnosing the reasons for a cache miss</a></li>
+<li><a href="#example">5.4. Example</a></li>
 </ul>
 </li>
-<li><a href="#summary">6. Summary</a></li>
+<li><a href="#common-problems">6. Common problems and their solutions</a>
+<ul class="sectlevel2">
+<li><a href="#system_file_encoding">6.1. System file encoding</a></li>
+<li><a href="#environment_variable_tracking">6.2. Environment variable tracking</a></li>
+<li><a href="#line_endings">6.3. Line endings</a></li>
+<li><a href="#symbolic_links">6.4. Symbolic links</a></li>
+<li><a href="#java_version_tracking">6.5. Java version tracking</a></li>
+<li><a href="#avoid_changing_inputs_external_to_your_build">6.6. Avoid changing inputs external to your build</a></li>
+<li><a href="#suggestions_for_authoring_your_build">6.7. Suggestions for authoring your build</a></li>
+<li><a href="#achieving_stable_task_inputs">6.8. Achieving stable task inputs</a></li>
+<li><a href="#custom_and_third_party_tasks">6.9. Custom and third party tasks</a></li>
+</ul>
+</li>
+<li><a href="#summary">7. Summary</a></li>
 </ul>
 </div>
 </div>
@@ -373,7 +381,7 @@ Gradle uses normalized inputs when doing up-to-date checks and when determining 
 The consumer of the file collection needs to declare what about a file is essential with respect to these two aspects.</p>
 </div>
 <div class="sect3">
-<h4 id="path_sensitivity_and_relocatability"><a class="anchor" href="#path_sensitivity_and_relocatability"></a>3.3.1. Path sensitivity and relocatability</h4>
+<h4 id="relocatability"><a class="anchor" href="#relocatability"></a>3.3.1. Path sensitivity and relocatability</h4>
 <div class="paragraph">
 <p>Tasks having file collections as inputs can declare the parts of a file path what are essential to them - this is called the <em>path sensitivity</em> of the input.
 For example, the class file produced by the Java compiler is dependent on the file name of the Java source file and does not depended on other parts of the file path.
@@ -402,7 +410,7 @@ For more information on compile avoidance see the corresponding section in the <
 </div>
 </div>
 <div class="sect3">
-<h4 id="runtime_classpath_normalization"><a class="anchor" href="#runtime_classpath_normalization"></a>3.3.3. Runtime classpath normalization</h4>
+<h4 id="runtime_classpath"><a class="anchor" href="#runtime_classpath"></a>3.3.3. Runtime classpath normalization</h4>
 <div class="paragraph">
 <p>Similar to compile avoidance, Gradle does understand the concept of a runtime classpath and uses a tailored input normalization to avoid running e.g. tests.
 For example, for a runtime classpath Gradle inspects the contents of jar files and ignores the timestamps and order of the entries in the jar file.
@@ -410,7 +418,7 @@ This means that a rebuilt jar file would be considered the same runtime classpat
 For details on what level of understanding Gradle has for detecting changes to classpaths see the <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:task_input_using_classpath_annotations">userguide</a>.</p>
 </div>
 <div class="sect4">
-<h5 id="filtering"><a class="anchor" href="#filtering"></a>Filtering</h5>
+<h5 id="filter_runtime_classpath"><a class="anchor" href="#filter_runtime_classpath"></a>Filtering</h5>
 <div class="paragraph">
 <p>For a runtime classpath it is even possible to provide better insights to Gradle which files are essential to the input by <a href="https://docs.gradle.org/4.0-rc-1/userguide/more_about_tasks.html#sec:configure_input_normalization">configuring input normalization</a>.</p>
 </div>
@@ -507,7 +515,166 @@ This is also why it is possible to see tasks which are loaded from the cache if 
 </div>
 </div>
 <div class="sect1">
-<h2 id="debugging_and_diagnosing_cache_misses"><a class="anchor" href="#debugging_and_diagnosing_cache_misses"></a>4. Debugging and diagnosing cache misses</h2>
+<h2 id="caching_java_projects"><a class="anchor" href="#caching_java_projects"></a>4. Caching Java projects</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Gradle team&#8217;s focus was on delivering support for using task output caching with Java projects.
+This means that most of the tasks related to building and testing projects targetting the JVM are cacheable and should work out of the box.
+You will need at least Gradle 4.0 for using task output caching for this use case.</p>
+</div>
+<div class="sect2">
+<h3 id="java_compilation"><a class="anchor" href="#java_compilation"></a>4.1. Java compilation</h3>
+<div class="paragraph">
+<p>Gradle has a deep understanding of classpaths used for Java compilation.
+Therefore, it can <a href="#compile_avoidance">avoid compilation</a> in many cases when the ABI of the compile task&#8217;s dependencies does not change.
+The same is true when using task output caching: Only the ABI will be part of the build cache key.
+Changes to it will not change the build cache key and therefore more outputs can be re-used.</p>
+</div>
+<div class="paragraph">
+<p>You do not have to do anything to make this work.
+There is one caveat though: If you use annotation processors, then Gradle also uses the annotation processor classpath as an input.
+But this is a runtime classpath, so less <a href="#runtime_classpath">input normalization</a> is taking place there.
+When not explicitly set, it defaults to the compile classpath and much less compilation can be avoided.
+Avoid using annotation processors if you can.
+If you have to use annotation processing then you should explicitly set the annotation processor classpath as described in the <a href="https://docs.gradle.org/4.0-rc-1/userguide/java_plugin.html#sec:java_compile_avoidance">userguide</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="unit_test_execution"><a class="anchor" href="#unit_test_execution"></a>4.2. Unit test execution</h3>
+<div class="paragraph">
+<p>The <code>Test</code> task used for test execution for JVM languages uses <a href="#runtime_classpath">runtime classpath normalization</a> for its classpath.
+This means that changes to order and timestamps in jars on the test classpath will not cause the task to be out-of-date or change the build cache key.
+For achieving <a href="#stable_task_inputs">Stable task inputs</a> you also can wield the power of <a href="#filter_runtime_classpath">filtering the runtime classpath</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="integration_test_execution"><a class="anchor" href="#integration_test_execution"></a>4.3. Integration test execution</h3>
+<div class="paragraph">
+<p>Unit tests are easy to cache as they normally have no external dependencies.
+For integration tests the situation can be quite different, as they can depend on a variety of inputs outside of the test and production code.
+This can be for example</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Operating system type and version</p>
+</li>
+<li>
+<p>external tools being installed for the tests</p>
+</li>
+<li>
+<p>environment variables</p>
+</li>
+<li>
+<p>other services being up and running</p>
+</li>
+<li>
+<p>a distribution of the software under test</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You need to be careful to declare these additional inputs for your integration test in order to avoid incorrect cache hits.
+For example, declaring the operating system in use by Gradle as an input to a <code>Test</code> task called <code>integTest</code> would work as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">integTest {
+    inputs.property(<span class="string"><span class="delimiter">&quot;</span><span class="content">operatingSystem</span><span class="delimiter">&quot;</span></span>) {
+        <span class="predefined-type">System</span>.getProperty(<span class="string"><span class="delimiter">&quot;</span><span class="content">os.name</span><span class="delimiter">&quot;</span></span>)
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that depending on a zip or tar archive as an input file will lead to cache misses since rebuilding will probably change the metadata in the archive as described in <a href="#concepts_repeatable_task_outputs">Repeatable task outputs</a>.
+In order to solve this problem you should depend on the contents on the archive instead. See also the section on dealing with <a href="#volatile_outputs">non-repeatable outputs</a>.</p>
+</div>
+<div class="paragraph">
+<p>You will probably pass some information from the build environment to your integration test tasks by using system properties.
+When possible, you should pass relative paths and add the input file as an input manually.
+Passing absolute paths will break <a href="#relocatability">relocatability</a> of the integration test task.
+For example, instead of doing this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">integTest {
+    systemProperty <span class="string"><span class="delimiter">&quot;</span><span class="content">distribution.location</span><span class="delimiter">&quot;</span></span>, file(<span class="string"><span class="delimiter">&quot;</span><span class="content">build/dist</span><span class="delimiter">&quot;</span></span>).absolutePath
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>you should do this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">integTest {
+    systemProperty <span class="string"><span class="delimiter">&quot;</span><span class="content">distribution.location</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">build/dist</span><span class="delimiter">&quot;</span></span> <i class="conum" data-value="1"></i><b>(1)</b>
+    inputs.dir(<span class="string"><span class="delimiter">&quot;</span><span class="content">build/dist</span><span class="delimiter">&quot;</span></span>).withPropertyName(<span class="string"><span class="delimiter">&quot;</span><span class="content">distDir</span><span class="delimiter">&quot;</span></span>).withPathSensitivity(PathSensitivity.RELATIVE) <i class="conum" data-value="2"></i><b>(2)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Adding the relative path as system property.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Adding all the files under the distribution directory as an input.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>It may be necessary to ignore some system properties as inputs as they do not influence the outcome of the integration tests.
+This is possible by overriding the <code>systemProperties</code> input via the runtime API.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">integTest {
+    <span class="keyword">def</span> ciProperties = [<span class="key">agentNumber</span>: (<span class="predefined-type">System</span>.getenv().get(<span class="string"><span class="delimiter">&quot;</span><span class="content">AGENT_NUMBER</span><span class="delimiter">&quot;</span></span>) ?: <span class="integer">1</span>] <i class="conum" data-value="1"></i><b>(1)</b>
+    systemProperties(ciProperties) <i class="conum" data-value="2"></i><b>(2)</b>
+
+    inputs.property(<span class="string"><span class="delimiter">'</span><span class="content">systemProperties</span><span class="delimiter">'</span></span>) { <i class="conum" data-value="3"></i><b>(3)</b>
+        systemProperties - ciProperties <i class="conum" data-value="4"></i><b>(4)</b>
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>This property does not influence the output of the integration tests.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Set the system properties for the actual test execution.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Overwrite the <code>systemProperties</code> input property.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>The new value for the <code>systemProperties</code> input without the ignored property.</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="enable_caching_for_code_buildsrc_code"><a class="anchor" href="#enable_caching_for_code_buildsrc_code"></a>4.4. Enable caching for <code>buildSrc</code></h3>
+<div class="paragraph">
+<p>The <code>buildSrc</code> directory will change pretty infrequently but every developer and CI agent will need to re-build and test it.
+Therefore, it is desirable to use task output caching for <code>buildSrc</code>, too.
+In order to use the same build cache configuration for <code>buildSrc</code> you should apply the same script to <code>buildSrc/settings.gradle</code> and to <code>settings.gradle</code> as shown in the <a href="https://docs.gradle.org/4.0-rc-1/userguide/build_cache.html#buildCacheBuildSrc">userguide</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="debugging_and_diagnosing_cache_misses"><a class="anchor" href="#debugging_and_diagnosing_cache_misses"></a>5. Debugging and diagnosing cache misses</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>For using task output caching efficiently it is essential to keep the balance between specifying all the inputs to your
@@ -521,7 +688,7 @@ will share outputs between tasks that should have had a different output. If you
 suggest to declare whatever change you expected to trigger the cache miss as an input to the task.</p>
 </div>
 <div class="sect2">
-<h3 id="how_to_find_problems_with_task_output_caching"><a class="anchor" href="#how_to_find_problems_with_task_output_caching"></a>4.1. How to find problems with task output caching</h3>
+<h3 id="how_to_find_problems_with_task_output_caching"><a class="anchor" href="#how_to_find_problems_with_task_output_caching"></a>5.1. How to find problems with task output caching</h3>
 <div class="paragraph">
 <p>In order to find existing problems with your usage of task output caching you can do a variety of things.</p>
 </div>
@@ -569,7 +736,7 @@ You then can look for certain patterns, like a rebuilding everything even though
 </div>
 </div>
 <div class="sect2">
-<h3 id="helpful_data_for_diagnosing_a_cache_miss"><a class="anchor" href="#helpful_data_for_diagnosing_a_cache_miss"></a>4.2. Helpful data for diagnosing a cache miss</h3>
+<h3 id="helpful_data_for_diagnosing_a_cache_miss"><a class="anchor" href="#helpful_data_for_diagnosing_a_cache_miss"></a>5.2. Helpful data for diagnosing a cache miss</h3>
 <div class="paragraph">
 <p>A cache miss happens when Gradle calculates a build cache key for a task which is different from any of the build cache keys in the cache.
 Only comparing the build cache key on its own does not give much information, so we need to look at some finer grained data to be able to diagnose the cache miss.
@@ -667,7 +834,7 @@ When this happens the reason why caching was disabled for the task is reported o
 </div>
 </div>
 <div class="sect2">
-<h3 id="diagnosing_cache_miss"><a class="anchor" href="#diagnosing_cache_miss"></a>4.3. Diagnosing the reasons for a cache miss</h3>
+<h3 id="diagnosing_cache_miss"><a class="anchor" href="#diagnosing_cache_miss"></a>5.3. Diagnosing the reasons for a cache miss</h3>
 <div class="paragraph">
 <p>Having the data from the last section at hand, you should be able to diagnose why the outputs of a certain task were not found in the build cache.
 Since you were expecting more tasks to be cached, you should be able to pinpoint a build which would have produced the artifact under question.</p>
@@ -721,7 +888,7 @@ Another option is that the task tracks absolute paths instead of relative paths 
 </div>
 </div>
 <div class="sect2">
-<h3 id="example"><a class="anchor" href="#example"></a>4.4. Example</h3>
+<h3 id="example"><a class="anchor" href="#example"></a>5.4. Example</h3>
 <div class="paragraph">
 <p>We will walk you through the process of diagnosing a cache miss.
 Let&#8217;s say we have build <code>A</code> and build <code>B</code> and we expected all the test tasks for a sub-project <code>sub1</code> to be cached in build <code>B</code> since only a unit test for another sub-project <code>sub2</code> changed.
@@ -769,10 +936,10 @@ In order to solve this problem see <a href="#volatile_outputs">Non-repeatable ta
 </div>
 </div>
 <div class="sect1">
-<h2 id="common-problems"><a class="anchor" href="#common-problems"></a>5. Common problems and their solutions</h2>
+<h2 id="common-problems"><a class="anchor" href="#common-problems"></a>6. Common problems and their solutions</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="system_file_encoding"><a class="anchor" href="#system_file_encoding"></a>5.1. System file encoding</h3>
+<h3 id="system_file_encoding"><a class="anchor" href="#system_file_encoding"></a>6.1. System file encoding</h3>
 <div class="paragraph">
 <p>Most Java tools use the system file encoding when no specific encoding is specified.
 This means that running the same build on machines with different file encoding can yield different outputs.
@@ -781,7 +948,7 @@ This can cause incorrect builds. You should always set the file system encoding 
 </div>
 </div>
 <div class="sect2">
-<h3 id="environment_variable_tracking"><a class="anchor" href="#environment_variable_tracking"></a>5.2. Environment variable tracking</h3>
+<h3 id="environment_variable_tracking"><a class="anchor" href="#environment_variable_tracking"></a>6.2. Environment variable tracking</h3>
 <div class="paragraph">
 <p>Gradle does not track changes in environment variables for tasks.
 For example for the <code>Test</code> tasks it is completely possible that the outcome depends on a few environment variables.
@@ -828,7 +995,7 @@ For example, the following setup would break caching of <code>Test</code> tasks,
 </div>
 </div>
 <div class="sect2">
-<h3 id="line_endings"><a class="anchor" href="#line_endings"></a>5.3. Line endings</h3>
+<h3 id="line_endings"><a class="anchor" href="#line_endings"></a>6.3. Line endings</h3>
 <div class="paragraph">
 <p>If you are building on different operating systems be aware that some version control systems convert line endings on check-out.
 For example, Git on Windows uses <code>autocrlf=true</code> by default which converts all line endings to <code>\r\n</code>.
@@ -837,7 +1004,7 @@ If sharing the build cache across multiple operating systems is important in you
 </div>
 </div>
 <div class="sect2">
-<h3 id="symbolic_links"><a class="anchor" href="#symbolic_links"></a>5.4. Symbolic links</h3>
+<h3 id="symbolic_links"><a class="anchor" href="#symbolic_links"></a>6.4. Symbolic links</h3>
 <div class="paragraph">
 <p>Gradle does not store the symbolic link in the build cache but the actual file contents of the destination of the link.
 As a consequence you might have a hard time when trying to re-use outputs which heavily use symbolic links.
@@ -845,7 +1012,7 @@ There currently is no workaround for this behavior.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="java_version_tracking"><a class="anchor" href="#java_version_tracking"></a>5.5. Java version tracking</h3>
+<h3 id="java_version_tracking"><a class="anchor" href="#java_version_tracking"></a>6.5. Java version tracking</h3>
 <div class="paragraph">
 <p>Gradle does track the major version of Java as an input for compilation and test execution.
 Currently, it does neither track the vendor nor the minor version.
@@ -891,7 +1058,7 @@ Therefore, you can expect differences in the bytecode of compiled Groovy classes
 </div>
 </div>
 <div class="sect2">
-<h3 id="avoid_changing_inputs_external_to_your_build"><a class="anchor" href="#avoid_changing_inputs_external_to_your_build"></a>5.6. Avoid changing inputs external to your build</h3>
+<h3 id="avoid_changing_inputs_external_to_your_build"><a class="anchor" href="#avoid_changing_inputs_external_to_your_build"></a>6.6. Avoid changing inputs external to your build</h3>
 <div class="paragraph">
 <p>If your build is dependent on external dependencies like binary artifacts or dynamic data from a web page you need to make sure that these inputs are consistent throughout your infrastructure.
 When there are some variations between machines then there will be no cache hits.</p>
@@ -909,9 +1076,9 @@ One way of locking the changes would be to check the volatile resource into sour
 </div>
 </div>
 <div class="sect2">
-<h3 id="suggestions_for_authoring_your_build"><a class="anchor" href="#suggestions_for_authoring_your_build"></a>5.7. Suggestions for authoring your build</h3>
+<h3 id="suggestions_for_authoring_your_build"><a class="anchor" href="#suggestions_for_authoring_your_build"></a>6.7. Suggestions for authoring your build</h3>
 <div class="sect3">
-<h4 id="review_usages_of_code_dofirst_code_and_code_dolast_code"><a class="anchor" href="#review_usages_of_code_dofirst_code_and_code_dolast_code"></a>5.7.1. Review usages of <code>doFirst</code> and <code>doLast</code></h4>
+<h4 id="review_usages_of_code_dofirst_code_and_code_dolast_code"><a class="anchor" href="#review_usages_of_code_dofirst_code_and_code_dolast_code"></a>6.7.1. Review usages of <code>doFirst</code> and <code>doLast</code></h4>
 <div class="paragraph">
 <p>Using <code>doFirst</code> and <code>doLast</code> from a build script on a cacheable tasks ties you to build script changes since the implementation of the closure comes from the build script.
 If possible, you should use separate tasks instead.</p>
@@ -947,7 +1114,7 @@ jar.dependsOn(configureJar)</code></pre>
 </div>
 </div>
 <div class="sect3">
-<h4 id="logic_based_on_task_outcome"><a class="anchor" href="#logic_based_on_task_outcome"></a>5.7.2. Build logic based on the outcome of a task</h4>
+<h4 id="logic_based_on_task_outcome"><a class="anchor" href="#logic_based_on_task_outcome"></a>6.7.2. Build logic based on the outcome of a task</h4>
 <div class="paragraph">
 <p>Do not base build logic on whether a task has been <em>executed</em>.
 In particular you should not assume that the output of a task can only change if it actually executed.
@@ -957,7 +1124,7 @@ For the very same reason using <code>outputs.upToDateWhen</code> is discouraged 
 </div>
 </div>
 <div class="sect3">
-<h4 id="overlapping_outputs"><a class="anchor" href="#overlapping_outputs"></a>5.7.3. Overlapping outputs</h4>
+<h4 id="overlapping_outputs"><a class="anchor" href="#overlapping_outputs"></a>6.7.3. Overlapping outputs</h4>
 <div class="paragraph">
 <p>You already saw that overlapping outputs are a problem for task output caching in <a href="#concepts_overlapping_outputs">The case against overlapping outputs</a>.
 When you add new tasks to your build or re-configure built-in tasks make sure you do not create overlapping outputs for cacheable tasks.
@@ -974,13 +1141,13 @@ If you must you can add a <code>Sync</code> task which then would sync the merge
 </div>
 </div>
 <div class="sect2">
-<h3 id="achieving_stable_task_inputs"><a class="anchor" href="#achieving_stable_task_inputs"></a>5.8. Achieving stable task inputs</h3>
+<h3 id="achieving_stable_task_inputs"><a class="anchor" href="#achieving_stable_task_inputs"></a>6.8. Achieving stable task inputs</h3>
 <div class="paragraph">
 <p>It is crucial to have <a href="#stable_task_inputs">stable task inputs</a> for every cacheable task.
 We will go through various situations which violate stable task inputs and look at possible solutions.</p>
 </div>
 <div class="sect3">
-<h4 id="volatile_inputs"><a class="anchor" href="#volatile_inputs"></a>5.8.1. Volatile task inputs</h4>
+<h4 id="volatile_inputs"><a class="anchor" href="#volatile_inputs"></a>6.8.1. Volatile task inputs</h4>
 <div class="paragraph">
 <p>If you use a volatile input like a timestamp as an input property for a task, then there is nothing Gradle can do to make the task cacheable.
 You should really think hard if the volatile data is really essential to the output or if it is only there for e.g. auditing purposes.</p>
@@ -998,7 +1165,7 @@ Most times though, the input will be part of the output.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="volatile_outputs"><a class="anchor" href="#volatile_outputs"></a>5.8.2. Non-repeatable task outputs</h4>
+<h4 id="volatile_outputs"><a class="anchor" href="#volatile_outputs"></a>6.8.2. Non-repeatable task outputs</h4>
 <div class="paragraph">
 <p>Having tasks which generate different outputs for the same inputs can pose a challenge for the effective use of task output caching as seen in <a href="#concepts_repeatable_task_outputs">Repeatable task outputs</a>.
 If the non-repeatable task output is not used by any other task then the effect is very limited.
@@ -1042,7 +1209,7 @@ If possible, you should avoid going down that route.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="limit_the_effect_volative_data"><a class="anchor" href="#limit_the_effect_volative_data"></a>5.8.3. Limit the effect volative data</h4>
+<h4 id="limit_the_effect_volative_data"><a class="anchor" href="#limit_the_effect_volative_data"></a>6.8.3. Limit the effect volative data</h4>
 <div class="paragraph">
 <p>If none of the described solutions for dealing with volatile data work for you, you should still be able to limit the effect of volatile data on effective use of the build cache.
 This can be done by adding the volatile data later to the outputs as described in <a id="volatile_inputs"></a>.
@@ -1057,7 +1224,7 @@ This is in conflict with the Continuous Delivery "build artifacts once" principl
 </div>
 </div>
 <div class="sect2">
-<h3 id="custom_and_third_party_tasks"><a class="anchor" href="#custom_and_third_party_tasks"></a>5.9. Custom and third party tasks</h3>
+<h3 id="custom_and_third_party_tasks"><a class="anchor" href="#custom_and_third_party_tasks"></a>6.9. Custom and third party tasks</h3>
 <div class="paragraph">
 <p>If your build contains custom or third party tasks, you should take special care that these don&#8217;t influence the effectiveness of the build cache.
 Special care should also be taken for code generation tasks which may not have <a href="#concepts_repeatable_task_outputs">repeatable task outputs</a>.
@@ -1073,7 +1240,7 @@ In the worst case this can lead to incorrect builds when the plugins try to depe
 </div>
 </div>
 <div class="sect1">
-<h2 id="summary"><a class="anchor" href="#summary"></a>6. Summary</h2>
+<h2 id="summary"><a class="anchor" href="#summary"></a>7. Summary</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>You learned about the two ways Gradle can avoid work and we showed you the concepts which make up a build which is effectively using task output caching.
@@ -1094,7 +1261,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-06 14:39:56 UTC
+Last updated 2017-06-06 16:57:01 UTC
 </div>
 </div>
 </body>
