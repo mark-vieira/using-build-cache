@@ -442,7 +442,7 @@ This is what Gradle already does with respect to runtime and compile classpath.
 The same files on the Java classpath are interpreted differently and different kinds of changes are detected.</p>
 </div>
 <div class="paragraph">
-<p>We are planning on extending the support for configurable input normalization in future versions of Gradle.</p>
+<p>The Gradle team is planning on extending the support for configurable input normalization in future versions of Gradle.</p>
 </div>
 </div>
 </div>
@@ -576,12 +576,16 @@ All the things influencing the build cache key can be found in the <a href="http
 </li>
 <li>
 <p>Task and Task action implementations</p>
-</li>
+<div class="ulist">
+<ul>
 <li>
 <p>classloader hash</p>
 </li>
 <li>
 <p>class name</p>
+</li>
+</ul>
+</div>
 </li>
 <li>
 <p>Task output property names</p>
@@ -598,7 +602,7 @@ All the things influencing the build cache key can be found in the <a href="http
 <p>Currently, the build cache key for the task is logged at the info level,
 while information down to the individual input property level is available in the info log:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
 <pre>Appending taskClass to build cache key: org.gradle.api.tasks.compile.JavaCompile_Decorated
 Appending classLoaderHash to build cache key: da6eca52100422099189290bf68f200a
@@ -736,7 +740,7 @@ sourceSets.main.output.dir generatedResourcesDir, <span class="key">builtBy</spa
 <div class="paragraph">
 <p>Since properties files stored by Java&#8217;s <code>Properties.store</code> method contain a timestamp, this will cause a change to the runtime classpath every time the build runs.
 Note that the compile classpath is not affected since compile avoidance ignores non-class files on the compile classpath.
-In order to solve this problem have a look at <a href="#volatile_data">[volatile_data]</a>.</p>
+In order to solve this problem see <a href="#volatile_outputs">Non-repeatable task outputs</a>.</p>
 </div>
 <div class="quoteblock">
 <blockquote>
@@ -763,19 +767,20 @@ In order to solve this problem have a look at <a href="#volatile_data">[volatile
 <div class="paragraph">
 <p>Most Java tools use the system file encoding when no specific encoding is specified.
 This means that running the same build on machines with different file encoding can yield different outputs.
-Gradle currently does only track that no file encoding has been specified on a task basis - but it does not track the system encoding of the JVM it is using.
+Currently Gradle only tracks on a per-task basis that no file encoding has been specified, but it does not track the system encoding of the JVM in use.
 This can cause incorrect builds. You should always set the file system encoding to avoid these kind of problems.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="environment_variable_tracking"><a class="anchor" href="#environment_variable_tracking"></a>5.2. Environment variable tracking</h3>
 <div class="paragraph">
-<p>Gradle does currently not track environment variables for tasks.
+<p>Gradle does not track changes in environment variables for tasks.
 For example for the <code>Test</code> tasks it is completely possible that the outcome depends on a few environment variables.
-To ensure that only the right artifacts are re-used between builds you need to add environment variables as an input to the tasks depending on them.</p>
+To ensure that only the right artifacts are re-used between builds, you need to add environment variables as inputs to tasks depending on them.</p>
 </div>
 <div class="paragraph">
-<p>Absolute paths are often passed as environment variables, too. You need to pay attention what you add as an input to the task in this case. If you add the absolute path then it will be very hard to re-use task outputs between different machines.
+<p>Absolute paths are often passed as environment variables, too. You need to pay attention what you add as an input to the task in this case.
+In this case you need to pay special attention to what you add as task inputs.
 You would need to ensure that the absolute path is the same between machines. Most times it makes sense to track the file or the contents of the directory the absolute path points to.
 If the absolute path represents a tool being used it probably makes sense to track the tool version as an input instead.
 &gt; <strong>TODO:</strong>
@@ -783,8 +788,8 @@ If the absolute path represents a tool being used it probably makes sense to tra
 &gt;  - Present examples how to fix these problems, probably using the runtime API</p>
 </div>
 <div class="paragraph">
-<p>If you are adding conditional logic whether you are building on CI or on a developer machine make sure that this does not break loading task outputs on developer machines from CI.
-For example, the following setup would break caching of <code>Test</code> tasks, since Gradle always would detect the difference in custom task actions:</p>
+<p>If you add conditional logic to distinguish CI builds from local development builds, you have to ensure that this does not break the loading of task outputs from CI onto developer machines.
+For example, the following setup would break caching of <code>Test</code> tasks, since Gradle always detects the differences in custom task actions.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -819,7 +824,7 @@ For example, the following setup would break caching of <code>Test</code> tasks,
 <p>If you are building on different operating systems be aware that some version control systems convert line endings on check-out.
 For example, Git on Windows uses <code>autocrlf=true</code> by default which converts all line endings to <code>\r\n</code>.
 As a consequence, compilation outputs can&#8217;t be re-used on Windows since the input sources are different.
-You should make sure to configure <code>autocrlf=false</code> across your build machines to ensure optimal build cache usage.</p>
+If sharing the build cache across multiple operating systems is important in your environment, then setting <code>autocrlf=false</code> across your build machines is crucial for optimal build cache usage.</p>
 </div>
 </div>
 <div class="sect2">
@@ -897,9 +902,9 @@ One way of locking the changes would be to check the volatile resource into sour
 <div class="sect2">
 <h3 id="suggestions_for_authoring_your_build"><a class="anchor" href="#suggestions_for_authoring_your_build"></a>5.7. Suggestions for authoring your build</h3>
 <div class="sect3">
-<h4 id="review_usages_of_code_dofirst_code"><a class="anchor" href="#review_usages_of_code_dofirst_code"></a>5.7.1. Review usages of <code>doFirst</code></h4>
+<h4 id="review_usages_of_code_dofirst_code_and_code_dolast_code"><a class="anchor" href="#review_usages_of_code_dofirst_code_and_code_dolast_code"></a>5.7.1. Review usages of <code>doFirst</code> and <code>doLast</code></h4>
 <div class="paragraph">
-<p>Using <code>doFirst</code> from a build script on a cacheable tasks ties you to build script changes since the implementation of the closure comes from the build script.
+<p>Using <code>doFirst</code> and <code>doLast</code> from a build script on a cacheable tasks ties you to build script changes since the implementation of the closure comes from the build script.
 If possible, you should use separate tasks instead.</p>
 </div>
 <div class="paragraph">
@@ -936,10 +941,10 @@ jar.dependsOn(configureJar)</code></pre>
 <h4 id="logic_based_on_task_outcome"><a class="anchor" href="#logic_based_on_task_outcome"></a>5.7.2. Build logic based on the outcome of a task</h4>
 <div class="paragraph">
 <p>Do not base build logic on whether a task has been <em>executed</em>.
-In particular you should not assume that the output of a task can only change if it did actually execute.
-The outputs could have been loaded from the build cache, too.
-In general, you should work together Gradle&#8217;s up-to-date checks since this will ensure that task output caching has the same view of the task.
-Using <code>outputs.upToDateWhen</code> is discouraged and should be better modelled by adding the right inputs to the task.</p>
+In particular you should not assume that the output of a task can only change if it actually executed.
+Actually, loading the outputs from the build cache would also change them.
+Instead of relying on custom logic to deal with changes to input or output files you should leverage Gradle&#8217;s built-in support by declaring the correct inputs and outputs for your tasks and leave it to Gradle to decide if the task actions should be executed.
+For the very same reason using <code>outputs.upToDateWhen</code> is discouraged and should be replaced by properly declaring the task&#8217;s inputs.</p>
 </div>
 </div>
 <div class="sect3">
@@ -984,20 +989,19 @@ Most times though, the input will be part of the output.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="volatile_outputs"><a class="anchor" href="#volatile_outputs"></a>5.8.2. Non repeatable task outputs</h4>
+<h4 id="volatile_outputs"><a class="anchor" href="#volatile_outputs"></a>5.8.2. Non-repeatable task outputs</h4>
 <div class="paragraph">
 <p>Having tasks which generate different outputs for the same inputs can pose a challenge for the effective use of task output caching as seen in <a href="#concepts_repeatable_task_outputs">Repeatable task outputs</a>.
 If the non-repeatable task output is not used by any other task then the effect is very limited.
 It basically means that pulling the task from the cache might produce a different result than executing the same task locally.
-If the only difference between the outputs is a timestamp then you can either accept the effect of the build cache or decide that the task is not cacheable after all.</p>
+If the only difference between the outputs is a timestamp, then you can either accept the effect of the build cache or decide that the task is not cacheable after all.</p>
 </div>
 <div class="paragraph">
-<p>The story is different if another task depends on the non repeatable output of a task since it would destroy stable task inputs.
+<p>Non-repeatable task outputs lead to non-stable task inputs as soon as another task depends on the non-repeatable output.
 For example, re-creating a jar file from the files with the same contents but different modification times yields a different jar file.
-Any other task depending on this jar file as an input file could not be loaded from the cache when the jar file is rebuilt locally.
-This can lead to hard to diagnose cache misses when the consuming build is not a clean build or when a cacheable task depends on the output of a non-cacheable task.
-For example, when doing incremental builds it is possible that the artifact on disk which is considered up-to-date and
-the artifact in the build cache are different even though they are essentially the same.
+Any other task depending on this jar file as an input file cannot be loaded from the cache when the jar file is rebuilt locally.
+This can lead to hard-to-diagnose cache misses when the consuming build is not a clean build or when a cacheable task depends on the output of a non-cacheable task.
+For example, when doing incremental builds it is possible that the artifact on disk which is considered up-to-date and the artifact in the build cache are different even though they are essentially the same.
 A task depending on this task output would then not be able to load outputs from the build cache since the inputs are not exactly the same.</p>
 </div>
 <div class="paragraph">
@@ -1024,7 +1028,7 @@ This is done by configuring e.g. the <code>Zip</code> task via the following sni
 <p>Another way to make the outputs repeatable is to activate caching for a task with non-repeatable outputs.
 If you can make sure that the same build cache is used for all builds then the task will always have the same outputs for the same inputs by design of the build cache.
 Going down this road can lead to different problems with cache misses for incremental builds as described above.
-Moreover, race conditions between different builds trying to store the same outputs in the build cache in parallel can lead to hard to diagnose cache misses.
+Moreover, race conditions between different builds trying to store the same outputs in the build cache in parallel can lead to hard-to-diagnose cache misses.
 If possible, you should avoid going down that route.</p>
 </div>
 </div>
@@ -1069,18 +1073,19 @@ By doing so, you will improve incremental build performance while having fast cl
 Remember, the best way to do work faster is to not do work that doesn’t need doing.</p>
 </div>
 <div class="paragraph">
-<p>Be aware that your journey is not done here.
+<p>Be aware that your journey does not end here.
 You should invest into keeping your build well behaved and check manually or automatically that you are still making effective use of the build cache.</p>
 </div>
 <div class="paragraph">
-<p>Our journey is also not done here. We will continue improving the build cache and give you more tools to make your builds even faster.</p>
+<p>The Gradle team&#8217;s journey does not end here either.
+They will continue improving the build cache and give you more tools to make your builds even faster.</p>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-02 14:41:45 UTC
+Last updated 2017-06-06 11:18:19 UTC
 </div>
 </div>
 </body>
