@@ -5,6 +5,7 @@
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.3">
+<meta name="author" content="Lorant Pinter, Stefan Wolf">
 <title>Build Cache Practices</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css">
 <link rel="stylesheet" href="./coderay-asciidoctor.css">
@@ -32,6 +33,9 @@
 </head>
 <body class="article toc2 toc-right">
 <div id="header"><div style="padding-top: 10px;"><a href="https://guides.gradle.org"><img src="http://guides.gradle.org/gradle-guides.svg" alt=""></a></div><h1>Build Cache Practices</h1>
+<div class="details">
+<span id="author" class="author">Lorant Pinter, Stefan Wolf</span><br>
+</div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
@@ -1188,7 +1192,7 @@ A task depending on this task output would then not be able to load outputs from
 </div>
 <div class="paragraph">
 <p>Gradle includes some support for creating repeatable output for archive tasks.
-For tar and zip files Gradle can be configured to create <a href="https://docs.gradle.org/4.0-rc-1/userguide/working_with_files#sec:reproducible_archives">reproducible archives</a>.
+For tar and zip files Gradle can be configured to create <a href="https://docs.gradle.org/4.0-rc-1/userguide/working_with_files.html#sec:reproducible_archives">reproducible archives</a>.
 This is done by configuring e.g. the <code>Zip</code> task via the following snippet.</p>
 </div>
 <div class="listingblock">
@@ -1261,7 +1265,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-06 16:57:01 UTC
+Last updated 2017-06-07 13:00:00 UTC
 </div>
 </div>
 </body>
