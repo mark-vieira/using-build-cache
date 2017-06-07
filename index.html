@@ -70,7 +70,7 @@
 <li><a href="#java_compilation">4.1. Java compilation</a></li>
 <li><a href="#unit_test_execution">4.2. Unit test execution</a></li>
 <li><a href="#integration_test_execution">4.3. Integration test execution</a></li>
-<li><a href="#enable_caching_for_code_buildsrc_code">4.4. Enable caching for <code>buildSrc</code></a></li>
+<li><a href="#caching_code_buildsrc_code">4.4. Caching <code>buildSrc</code></a></li>
 </ul>
 </li>
 <li><a href="#debugging_and_diagnosing_cache_misses">5. Debugging and diagnosing cache misses</a>
@@ -143,13 +143,6 @@
 <p>Using the build cache on CI first makes sense as the environment on CI agents is usually easier to control than developer machines.
 It helps to point out possible issues with the build that hurt cacheability.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>TODO:</strong> Discus audit requirements.</p>
-</div>
-</blockquote>
-</div>
 </div>
 <div class="sect2">
 <h3 id="accelerate_developer_builds_by_reusing_ci_results"><a class="anchor" href="#accelerate_developer_builds_by_reusing_ci_results"></a>1.3. Accelerate developer builds by reusing CI results</h3>
@@ -158,13 +151,6 @@ It helps to point out possible issues with the build that hurt cacheability.</p>
 </div>
 <div class="paragraph">
 <p>The changes don&#8217;t need to be completely independent, either; we&#8217;ll take a look at the strategies to reuse results when dependencies are involved in the section about the <a href="#normalization">different forms of normalization</a>.</p>
-</div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>TODO:</strong> Mention using a Git branch for latest published commit can help reduce problems with developers pulling too fresh changes.</p>
-</div>
-</blockquote>
 </div>
 </div>
 <div class="sect2">
@@ -242,20 +228,6 @@ You might have encountered a few cached tasks even in the first of the two build
 <div class="paragraph">
 <p>Normally, your <em>fully cached</em> build should be significantly faster than the <code>clean</code> build: this is the theoretical limit of how much time using the build cache can save on your particular build when running the tasks that you were running. We&#8217;ll be covering several common causes for why your build might not produce amazing numbers here for the first try.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>TODO:</strong> Link to where we discuss problems.</p>
-</div>
-</blockquote>
-</div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>TODO:</strong> Mention that build scans can provide more info about task execution stats.</p>
-</div>
-</blockquote>
-</div>
 <div class="paragraph">
 <p>In everyday situations fully cached builds are rare, as the purpose of running a build is to process some new changes. The structure of the software being built (how many modules are there, how independent are its parts etc.), and the nature of the changes themselves ("big refactor in the core of the system" vs. "small change to a unit test" etc.) strongly influence the caching performance. As developers tend to submit different kinds of changes over time, caching performance is expected to vary with each change. As with any cache, the impact should thus be measured over time.</p>
 </div>
@@ -268,32 +240,11 @@ You might have encountered a few cached tasks even in the first of the two build
 <div class="paragraph">
 <p>The best way to learn about the impact of caching on CI is to set up the same builds with the cache enabled and disabled, and compare the results over time. If you have a single Gradle build step that you want to enable caching for, it&#8217;s easy to compare the results using your CI system&#8217;s built-in statistical tools.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>TODO:</strong> Graph of Gradle&#8217;s cache performance for sanity check between cached and non-cached</p>
-</div>
-</blockquote>
-</div>
 <div class="paragraph">
 <p>Measuring complex pipelines requires some more work, and some external tool to collect and process measurements. It&#8217;s important to distinguish parts of the pipeline that caching has no effect on, for example the time builds spend waiting in the CI system&#8217;s queue, or time taken by checking out source code from version control.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>TODO:</strong> Do we know of tools for TeamCity or Jenkins that make the collection of such data easier?</p>
-</div>
-</blockquote>
-</div>
 <div class="paragraph">
 <p>Typically, CI builds above a certain size include parallel sections to utilize multiple agents. With parallel pipelines you can measure the wall-clock time it takes for a set of changes to go from having been pushed to version control to being built, verified and deployed. The build cache&#8217;s effect in this case can be measured in the reduction of the time developers have to wait for feedback from CI.</p>
-</div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>TODO:</strong> Graph of Gradle&#8217;s cache performance - from <a href="https://docs.google.com/spreadsheets/d/1dCYVAL9Qw2_ZpAdXfZAABEpLm-Q8PzD4G1etUq430zY/edit#gid=1079649909" class="bare">https://docs.google.com/spreadsheets/d/1dCYVAL9Qw2_ZpAdXfZAABEpLm-Q8PzD4G1etUq430zY/edit#gid=1079649909</a></p>
-</div>
-</blockquote>
 </div>
 <div class="paragraph">
 <p>You can also measure the cumulative time it took to build a changeset, which will give you a sense of the amount of work the CI infrastructure has to excert. The cache&#8217;s effect here is less money spent on CI infrastructure, as you don&#8217;t need as many CI agents to maintain the same number of changes built.</p>
@@ -341,15 +292,15 @@ A rise in the hit rate there probably indicates better usage by developers.</p>
 <p>Imagine that you&#8217;ve just pulled the main branch of your software afresh from version control. CI has already built this particular commit, so the remote cache should be hot: if you ran a build now, every cacheable task should be loaded from cache.</p>
 </div>
 <div class="paragraph">
-<p>For this to work, your cacheable tasks in your local build need to have exactly the same inputs as on CI.
-This is only possible if your inputs are stable, i.e. they only depend on the state of the workspace and the tools required by it, e.g. the Java version.</p>
+<p>For this to work, the cacheable tasks in your local build need to have exactly the same inputs as they had on CI.
+This is only possible if your inputs are stable, i.e. they only depend on the state of the workspace and the tools required by the build, e.g. the Java version.</p>
 </div>
 <div class="paragraph">
 <p>It could well be that the inputs to your tasks are dependent on something you cannot control, for example the current time.
-This can happen quite easily. For example you decided to add a timestamp to your jar manifests or to a property file on the classpath.
+For example you decided to add a timestamp to your jar manifests or to a property file on the classpath.
 We call these inputs volatile.
 Cacheable tasks need to have stable inputs.
-If the inputs to a cacheable tasks are not stable then it will never be pulled from the cache and only take up space in the cache backend.</p>
+If the inputs to a cacheable task are not stable, then it will never be pulled from the cache, and only take up space in the cache backend.</p>
 </div>
 </div>
 <div class="sect2">
@@ -522,31 +473,40 @@ This is also why it is possible to see tasks which are loaded from the cache if 
 <h2 id="caching_java_projects"><a class="anchor" href="#caching_java_projects"></a>4. Caching Java projects</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The Gradle team&#8217;s focus was on delivering support for using task output caching with Java projects.
-This means that most of the tasks related to building and testing projects targetting the JVM are cacheable and should work out of the box.
-You will need at least Gradle 4.0 for using task output caching for this use case.</p>
+<p>As of Gradle 4.0, the build tool fully supports caching plain Java projects.
+Built in tasks for compiling, testing and documenting Java code are cached by default.</p>
 </div>
 <div class="sect2">
 <h3 id="java_compilation"><a class="anchor" href="#java_compilation"></a>4.1. Java compilation</h3>
 <div class="paragraph">
-<p>Gradle has a deep understanding of classpaths used for Java compilation.
-Therefore, it can <a href="#compile_avoidance">avoid compilation</a> in many cases when the ABI of the compile task&#8217;s dependencies does not change.
-The same is true when using task output caching: Only the ABI will be part of the build cache key.
-Changes to it will not change the build cache key and therefore more outputs can be re-used.</p>
+<p>Caching Java compilation makes use of Gradle&#8217;s deep understanding of compile classpaths.
+The mechanism <a href="#compile_avoidance">avoids recompilation</a> when dependency change in a way that doesn&#8217;t affect their abstract binary interfaces (ABI). Since the cache key is only influence by the ABI of dependencies (and not by their implementation details like private types and method bodies), task output caching can also reuse compiled classes if they were produced by the same sources and ABI-equivalent dependencies.</p>
 </div>
 <div class="paragraph">
+<p>For example, take a project with two modules: an application depending on a library.
+Suppose the latest version is already built by CI and uploaded to the shared cache.
+If a developer now modifies a method&#8217;s body in the library, the library will need to be rebuilt on their computer. But they will be able to pull the compiled classes for the application from the shared cache. Gradle can do this because the library used to compile the application on CI, and the modified library available locally share the same ABI.</p>
+</div>
+<div class="sect3">
+<h4 id="annotation_processors"><a class="anchor" href="#annotation_processors"></a>4.1.1. Annotation processors</h4>
+<div class="paragraph">
 <p>You do not have to do anything to make this work.
-There is one caveat though: If you use annotation processors, then Gradle also uses the annotation processor classpath as an input.
-But this is a runtime classpath, so less <a href="#runtime_classpath">input normalization</a> is taking place there.
-When not explicitly set, it defaults to the compile classpath and much less compilation can be avoided.
-Avoid using annotation processors if you can.
-If you have to use annotation processing then you should explicitly set the annotation processor classpath as described in the <a href="https://docs.gradle.org/4.0-rc-1/userguide/java_plugin.html#sec:java_compile_avoidance">userguide</a>.</p>
+There is one caveat though: when using annotation processors, Gradle uses the annotation processor classpath as an input.
+As this is a runtime classpath, less <a href="#runtime_classpath">input normalization</a> is taking place there.
+When the annotation processor classpath is not set explicitly, it defaults to the compile classpath, which in turn means the compile classpath is treated as a runtime classpath input.</p>
+</div>
+<div class="paragraph">
+<p>For the example above this would mean the ABI extracted from the compile classpath would be unchanged, but the annotation processor classpath (because it&#8217;s not treated with compile avoidance) would be different. Ultimately, the developer would end up having to recompile the application.</p>
+</div>
+<div class="paragraph">
+<p>The easiest way to avoid this performance penalty is to not use annotation processors. If you need to use them, make sure you set the annotation processor classpath explicitly to include only the libraries needed for annotation processing. The <a href="https://docs.gradle.org/4.0-rc-1/userguide/java_plugin.html#sec:java_compile_avoidance">user guide</a> describes how to do this.</p>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="unit_test_execution"><a class="anchor" href="#unit_test_execution"></a>4.2. Unit test execution</h3>
 <div class="paragraph">
-<p>The <code>Test</code> task used for test execution for JVM languages uses <a href="#runtime_classpath">runtime classpath normalization</a> for its classpath.
+<p>The <code>Test</code> task used for test execution for JVM languages employs <a href="#runtime_classpath">runtime classpath normalization</a> for its classpath.
 This means that changes to order and timestamps in jars on the test classpath will not cause the task to be out-of-date or change the build cache key.
 For achieving <a href="#stable_task_inputs">Stable task inputs</a> you also can wield the power of <a href="#filter_runtime_classpath">filtering the runtime classpath</a>.</p>
 </div>
@@ -556,30 +516,30 @@ For achieving <a href="#stable_task_inputs">Stable task inputs</a> you also can 
 <div class="paragraph">
 <p>Unit tests are easy to cache as they normally have no external dependencies.
 For integration tests the situation can be quite different, as they can depend on a variety of inputs outside of the test and production code.
-This can be for example</p>
+These external factors can be for example:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Operating system type and version</p>
+<p>operating system type and version,</p>
 </li>
 <li>
-<p>external tools being installed for the tests</p>
+<p>external tools being installed for the tests,</p>
 </li>
 <li>
-<p>environment variables</p>
+<p>environment variables and Java system properties,</p>
 </li>
 <li>
-<p>other services being up and running</p>
+<p>other services being up and running,</p>
 </li>
 <li>
-<p>a distribution of the software under test</p>
+<p>a distribution of the software under test.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
 <p>You need to be careful to declare these additional inputs for your integration test in order to avoid incorrect cache hits.
-For example, declaring the operating system in use by Gradle as an input to a <code>Test</code> task called <code>integTest</code> would work as follows.</p>
+For example, declaring the operating system in use by Gradle as an input to a <code>Test</code> task called <code>integTest</code> would work as follows:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -590,15 +550,21 @@ For example, declaring the operating system in use by Gradle as an input to a <c
 }</code></pre>
 </div>
 </div>
+<div class="sect3">
+<h4 id="archives_as_inputs"><a class="anchor" href="#archives_as_inputs"></a>4.3.1. Archives as inputs</h4>
 <div class="paragraph">
 <p>Note that depending on a zip or tar archive as an input file will lead to cache misses since rebuilding will probably change the metadata in the archive as described in <a href="#concepts_repeatable_task_outputs">Repeatable task outputs</a>.
-In order to solve this problem you should depend on the contents on the archive instead. See also the section on dealing with <a href="#volatile_outputs">non-repeatable outputs</a>.</p>
+To avoid this problem altogether you can instead depend on the contents on the archive. See also the section on dealing with <a href="#volatile_outputs">non-repeatable outputs</a>.</p>
 </div>
+</div>
+<div class="sect3">
+<h4 id="dealing_with_file_paths"><a class="anchor" href="#dealing_with_file_paths"></a>4.3.2. Dealing with file paths</h4>
 <div class="paragraph">
 <p>You will probably pass some information from the build environment to your integration test tasks by using system properties.
-When possible, you should pass relative paths and add the input file as an input manually.
+When passing file locations, use only paths whenever possible, and add the input file as an input manually, so that Gradle can track changes to the contents of the file.
+(This works with directories as well.)
 Passing absolute paths will break <a href="#relocatability">relocatability</a> of the integration test task.
-For example, instead of doing this:</p>
+For example, with a task called <code>integTest</code>, instead of this:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -608,7 +574,7 @@ For example, instead of doing this:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>you should do this:</p>
+<p>&#8230;&#8203;it is better to do this:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -630,9 +596,12 @@ For example, instead of doing this:</p>
 </tr>
 </table>
 </div>
+</div>
+<div class="sect3">
+<h4 id="ignoring_system_properties"><a class="anchor" href="#ignoring_system_properties"></a>4.3.3. Ignoring system properties</h4>
 <div class="paragraph">
 <p>It may be necessary to ignore some system properties as inputs as they do not influence the outcome of the integration tests.
-This is possible by overriding the <code>systemProperties</code> input via the runtime API.</p>
+This is possible by overriding the <code>systemProperties</code> input property via the runtime API.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -667,12 +636,13 @@ This is possible by overriding the <code>systemProperties</code> input via the r
 </table>
 </div>
 </div>
+</div>
 <div class="sect2">
-<h3 id="enable_caching_for_code_buildsrc_code"><a class="anchor" href="#enable_caching_for_code_buildsrc_code"></a>4.4. Enable caching for <code>buildSrc</code></h3>
+<h3 id="caching_code_buildsrc_code"><a class="anchor" href="#caching_code_buildsrc_code"></a>4.4. Caching <code>buildSrc</code></h3>
 <div class="paragraph">
-<p>The <code>buildSrc</code> directory will change pretty infrequently but every developer and CI agent will need to re-build and test it.
-Therefore, it is desirable to use task output caching for <code>buildSrc</code>, too.
-In order to use the same build cache configuration for <code>buildSrc</code> you should apply the same script to <code>buildSrc/settings.gradle</code> and to <code>settings.gradle</code> as shown in the <a href="https://docs.gradle.org/4.0-rc-1/userguide/build_cache.html#buildCacheBuildSrc">userguide</a>.</p>
+<p>While <code>buildSrc</code> typically does not change frequently, when it does every developer and CI agent needs to re-build and test it.
+Therefore, it is usually desirable to use task output caching for <code>buildSrc</code>, too.
+To use the same build cache configuration for <code>buildSrc</code> as for your root project, you can apply the same script both in <code>buildSrc/settings.gradle</code> and in <code>settings.gradle</code> as shown in the <a href="https://docs.gradle.org/4.0-rc-1/userguide/build_cache.html#buildCacheBuildSrc">user guide</a>.</p>
 </div>
 </div>
 </div>
@@ -822,20 +792,6 @@ When this happens the reason why caching was disabled for the task is reported o
 <img src="images/caching-disabled.png" alt="caching disabled">
 </div>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>TODO:</strong></p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Add current GE screenshot showing some differences</p>
-</li>
-</ul>
-</div>
-</blockquote>
-</div>
 </div>
 <div class="sect2">
 <h3 id="diagnosing_cache_miss"><a class="anchor" href="#diagnosing_cache_miss"></a>5.3. Diagnosing the reasons for a cache miss</h3>
@@ -921,20 +877,6 @@ sourceSets.main.output.dir generatedResourcesDir, <span class="key">builtBy</spa
 <p>Since properties files stored by Java&#8217;s <code>Properties.store</code> method contain a timestamp, this will cause a change to the runtime classpath every time the build runs.
 Note that the compile classpath is not affected since compile avoidance ignores non-class files on the compile classpath.
 In order to solve this problem see <a href="#volatile_outputs">Non-repeatable task outputs</a>.</p>
-</div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>TODO:</strong></p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Add GE screenshots</p>
-</li>
-</ul>
-</div>
-</blockquote>
 </div>
 </div>
 </div>
@@ -1265,7 +1207,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-07 13:00:00 UTC
+Last updated 2017-06-07 16:32:03 UTC
 </div>
 </div>
 </body>
