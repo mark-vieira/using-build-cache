@@ -483,7 +483,8 @@ Built in tasks for compiling, testing and documenting Java code are cached by de
 <h3 id="java_compilation"><a class="anchor" href="#java_compilation"></a>4.1. Java compilation</h3>
 <div class="paragraph">
 <p>Caching Java compilation makes use of Gradle&#8217;s deep understanding of compile classpaths.
-The mechanism <a href="#compile_avoidance">avoids recompilation</a> when dependency change in a way that doesn&#8217;t affect their abstract binary interfaces (ABI). Since the cache key is only influence by the ABI of dependencies (and not by their implementation details like private types and method bodies), task output caching can also re-use compiled classes if they were produced by the same sources and ABI-equivalent dependencies.</p>
+The mechanism <a href="#compile_avoidance">avoids recompilation</a> when dependencies change in a way that doesn&#8217;t affect their abstract binary interfaces (ABI).
+Since the cache key is only influenced by the ABI of dependencies (and not by their implementation details like private types and method bodies), task output caching can also re-use compiled classes if they were produced by the same sources and ABI-equivalent dependencies.</p>
 </div>
 <div class="paragraph">
 <p>For example, take a project with two modules: an application depending on a library.
@@ -564,7 +565,7 @@ To avoid this problem altogether you can instead depend on the contents on the a
 <h4 id="dealing_with_file_paths"><a class="anchor" href="#dealing_with_file_paths"></a>4.3.2. Dealing with file paths</h4>
 <div class="paragraph">
 <p>You will probably pass some information from the build environment to your integration test tasks by using system properties.
-When passing file locations, use only paths whenever possible, and add the input file as an input manually, so that Gradle can track changes to the contents of the file.
+When passing file locations, use only relative paths whenever possible, and add the input file as an input manually, so that Gradle can track changes to the contents of the file.
 (This works with directories as well.)
 Passing absolute paths will break <a href="#relocatability">relocatability</a> of the integration test task.
 For example, with a task called <code>integTest</code>, instead of this:</p>
@@ -1211,7 +1212,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-08 06:58:46 UTC
+Last updated 2017-06-08 07:11:22 UTC
 </div>
 </div>
 </body>
