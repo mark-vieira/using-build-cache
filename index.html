@@ -75,7 +75,7 @@
 </li>
 <li><a href="#debugging_and_diagnosing_cache_misses">5. Debugging and diagnosing cache misses</a>
 <ul class="sectlevel2">
-<li><a href="#how_to_find_problems_with_task_output_caching">5.1. How to find problems with task output caching</a></li>
+<li><a href="#finding_problems">5.1. Finding problems with task output caching</a></li>
 <li><a href="#helpful_data_for_diagnosing_a_cache_miss">5.2. Helpful data for diagnosing a cache miss</a></li>
 <li><a href="#diagnosing_cache_miss">5.3. Diagnosing the reasons for a cache miss</a></li>
 <li><a href="#example">5.4. Example</a></li>
@@ -145,6 +145,15 @@ This translates into faster feedback to developers, and less money spent on the 
 <p>Using the build cache on CI first makes sense as the environment on CI agents is usually easier to control than developer machines.
 It helps to point out possible issues with the build that hurt cacheability.</p>
 </div>
+<div class="paragraph">
+<p>If you are subject to audit requirements regarding the artifacts you ship to your customers you may need to disable the build cache for certain builds.
+Note that when using Gradle Enterprise you can easily find out which build produced an artifact coming from the build cache by clicking on the <code>FROM-CACHE</code> status.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/from-cache-origin.png" alt="from cache origin">
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="accelerate_developer_builds_by_reusing_ci_results"><a class="anchor" href="#accelerate_developer_builds_by_reusing_ci_results"></a>1.3. Accelerate developer builds by reusing CI results</h3>
@@ -153,6 +162,10 @@ It helps to point out possible issues with the build that hurt cacheability.</p>
 </div>
 <div class="paragraph">
 <p>The changes don&#8217;t need to be completely independent, either; we&#8217;ll take a look at the strategies to re-use results when dependencies are involved in the section about the <a href="#normalization">different forms of normalization</a>.</p>
+</div>
+<div class="paragraph">
+<p>It may be helpful to have your CI builds push to a branch after the build warming up the build cache completed.
+In this way every developer can pull from this branch and benefit from using the shared build cache.</p>
 </div>
 </div>
 <div class="sect2">
@@ -228,7 +241,14 @@ You might have encountered a few cached tasks even in the first of the two build
 </table>
 </div>
 <div class="paragraph">
-<p>Normally, your <em>fully cached</em> build should be significantly faster than the <code>clean</code> build: this is the theoretical limit of how much time using the build cache can save on your particular build when running the tasks that you were running. We&#8217;ll be covering several common causes for why your build might not produce amazing numbers here for the first try.</p>
+<p>Normally, your <em>fully cached</em> build should be significantly faster than the <code>clean</code> build: this is the theoretical limit of how much time using the build cache can save on your particular build when running the tasks that you were running.
+We&#8217;ll be covering several common causes for why your build might not produce amazing numbers here for the first try, see <a href="#finding_problems">Finding problems with task output caching</a>.
+Build scans provide a detailed performance breakdown which show you how effectively your build is using the build cache.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/performance-task-execution.png" alt="performance task execution">
+</div>
 </div>
 <div class="paragraph">
 <p>In everyday situations fully cached builds are rare, as the purpose of running a build is to process some new changes. The structure of the software being built (how many modules are there, how independent are its parts etc.), and the nature of the changes themselves ("big refactor in the core of the system" vs. "small change to a unit test" etc.) strongly influence the caching performance. As developers tend to submit different kinds of changes over time, caching performance is expected to vary with each change. As with any cache, the impact should thus be measured over time.</p>
@@ -242,15 +262,35 @@ You might have encountered a few cached tasks even in the first of the two build
 <div class="paragraph">
 <p>The best way to learn about the impact of caching on CI is to set up the same builds with the cache enabled and disabled, and compare the results over time. If you have a single Gradle build step that you want to enable caching for, it&#8217;s easy to compare the results using your CI system&#8217;s built-in statistical tools.</p>
 </div>
+<div class="imageblock">
+<div class="content">
+<img src="images/sanity-check-graph.png" alt="single build comparison">
+</div>
+</div>
 <div class="paragraph">
 <p>Measuring complex pipelines requires some more work, and some external tool to collect and process measurements.
 It&#8217;s important to distinguish those parts of the pipeline that caching has no effect on, for example the time builds spend waiting in the CI system&#8217;s queue, or time taken by checking out source code from version control.</p>
 </div>
 <div class="paragraph">
+<p>You can use the build statistics if you use Teamcity for your CI builds.
+Most of time you will end up extracting data from your CI server via the corresponding REST API (see <a href="https://wiki.jenkins-ci.org/display/JENKINS/Remote+access+API">Jenkins remote access API</a> and <a href="https://confluence.jetbrains.com/display/TCD10/REST+API">Teamcity REST API</a>).
+When using Gradle Enterprise, you can use the <a href="https://docs.gradle.com/enterprise/export-api/">export API</a> to access the necessary data and run your analytics on them.</p>
+</div>
+<div class="paragraph">
 <p>Typically, CI builds above a certain size include parallel sections to utilize multiple agents. With parallel pipelines you can measure the wall-clock time it takes for a set of changes to go from having been pushed to version control to being built, verified and deployed. The build cache&#8217;s effect in this case can be measured in the reduction of the time developers have to wait for feedback from CI.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/stage-2-time-to-developer-feedback.png" alt="time to developer feedback">
+</div>
 </div>
 <div class="paragraph">
 <p>You can also measure the cumulative time it took to build a changeset, which will give you a sense of the amount of work the CI infrastructure has to excert. The cache&#8217;s effect here is less money spent on CI infrastructure, as you don&#8217;t need as many CI agents to maintain the same number of changes built.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/stage-2-cumulative-time-graph.png" alt="cumulative build time">
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -272,12 +312,17 @@ It&#8217;s important to distinguish those parts of the pipeline that caching has
 </ul>
 </div>
 <div class="paragraph">
-<p>When using the Gradle Enterprise build cache backend you should pay close attention to the hit rate in the admin UI.
+<p>When using Gradle Enterprise you can use the <a href="https://docs.gradle.com/enterprise/export-api/">export API</a> to extract data about developer builds, too.
+You can then create statistics on how many tasks where cached per developer or build.
+You can even compare the times it took to execute the task to pulling it from the cache and then estimate the time saved per developer.</p>
+</div>
+<div class="paragraph">
+<p>When using the <a href="https://gradle.com/build-cache">Gradle Enterprise build cache backend</a> you should pay close attention to the hit rate in the admin UI.
 A rise in the hit rate there probably indicates better usage by developers.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/cache-admin-hit-rate.png" alt="cache admin hit rate">
+<img src="images/cache-admin-hit-rate.png" alt="build cache hit rate">
 </div>
 </div>
 </div>
@@ -644,7 +689,8 @@ This is possible by overriding the <code>systemProperties</code> input property 
 <div class="sect2">
 <h3 id="caching_code_buildsrc_code"><a class="anchor" href="#caching_code_buildsrc_code"></a>4.4. Caching <code>buildSrc</code></h3>
 <div class="paragraph">
-<p>While <code>buildSrc</code> typically does not change frequently, when it does every developer and CI agent needs to re-build and test it.
+<p>The <a href="https://docs.gradle.org/4.0-rc-2/userguide/organizing_build_logic.html#sec:build_sources"><code>buildSrc</code> project</a> can be used to organize build logic in your Gradle build.
+While <code>buildSrc</code> typically does not change frequently, when it does every developer and CI agent needs to re-build and test it.
 Therefore, it is usually desirable to use task output caching for <code>buildSrc</code>, too.
 To use the same build cache configuration for <code>buildSrc</code> as for your root project, you can apply the same script both in <code>buildSrc/settings.gradle</code> and in <code>settings.gradle</code> as shown in the <a href="https://docs.gradle.org/4.0-rc-2/userguide/build_cache.html#buildCacheBuildSrc">user guide</a>.</p>
 </div>
@@ -666,7 +712,7 @@ will share outputs between tasks that should have had a different output. If you
 suggest to declare whatever change you expected to trigger the cache miss as an input to the task.</p>
 </div>
 <div class="sect2">
-<h3 id="how_to_find_problems_with_task_output_caching"><a class="anchor" href="#how_to_find_problems_with_task_output_caching"></a>5.1. How to find problems with task output caching</h3>
+<h3 id="finding_problems"><a class="anchor" href="#finding_problems"></a>5.1. Finding problems with task output caching</h3>
 <div class="paragraph">
 <p>In order to find existing problems with your usage of task output caching you can do a variety of things.</p>
 </div>
@@ -816,7 +862,10 @@ This can be done from the timeline view in a build scan or from the task input c
 </div>
 <div class="paragraph">
 <p>At first, you should check if the implementation of the task changed. This would mean checking the class names and classloader hashes
-for the task class itself and for each of its action. If there is a change, this means that the build script, <code>buildSrc</code> or the Gradle version has changed.</p>
+for the task class itself and for each of its action. If there is a change, this means that the build script, <code>buildSrc</code> or the Gradle version has changed.
+Note that a change in the output of <code>buildSrc</code> also marks all the logic added by your build as changed.
+Especially, custom actions added to cacheable tasks will be marked as changed.
+This can be problematic, see <a href="#custom_actions">Review usages of <code>doFirst</code> and <code>doLast</code></a>.</p>
 </div>
 <div class="paragraph">
 <p>If the implementation is the same, then you need to start comparing inputs between the two builds.
@@ -908,10 +957,19 @@ To ensure that only the right artifacts are re-used between builds, you need to 
 <p>Absolute paths are often passed as environment variables, too. You need to pay attention what you add as an input to the task in this case.
 In this case you need to pay special attention to what you add as task inputs.
 You would need to ensure that the absolute path is the same between machines. Most times it makes sense to track the file or the contents of the directory the absolute path points to.
-If the absolute path represents a tool being used it probably makes sense to track the tool version as an input instead.
-&gt; <strong>TODO:</strong>
-&gt;
-&gt;  - Present examples how to fix these problems, probably using the runtime API</p>
+If the absolute path represents a tool being used it probably makes sense to track the tool version as an input instead.</p>
+</div>
+<div class="paragraph">
+<p>For example, if you are using tools in your <code>Test</code> task called <code>integTest</code> which depend on the the contents of the <code>LANG</code> variable you should do this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">integTest {
+    inputs.property(<span class="string"><span class="delimiter">&quot;</span><span class="content">langEnvironment</span><span class="delimiter">&quot;</span></span>) {
+        <span class="predefined-type">System</span>.getenv(<span class="string"><span class="delimiter">&quot;</span><span class="content">LANG</span><span class="delimiter">&quot;</span></span>)
+    }
+}</code></pre>
+</div>
 </div>
 <div class="paragraph">
 <p>If you add conditional logic to distinguish CI builds from local development builds, you have to ensure that this does not break the loading of task outputs from CI onto developer machines.
@@ -1029,7 +1087,7 @@ One way of locking the changes would be to check the volatile resource into sour
 <div class="sect2">
 <h3 id="suggestions_for_authoring_your_build"><a class="anchor" href="#suggestions_for_authoring_your_build"></a>6.7. Suggestions for authoring your build</h3>
 <div class="sect3">
-<h4 id="review_usages_of_code_dofirst_code_and_code_dolast_code"><a class="anchor" href="#review_usages_of_code_dofirst_code_and_code_dolast_code"></a>6.7.1. Review usages of <code>doFirst</code> and <code>doLast</code></h4>
+<h4 id="custom_actions"><a class="anchor" href="#custom_actions"></a>6.7.1. Review usages of <code>doFirst</code> and <code>doLast</code></h4>
 <div class="paragraph">
 <p>Using <code>doFirst</code> and <code>doLast</code> from a build script on a cacheable tasks ties you to build script changes since the implementation of the closure comes from the build script.
 If possible, you should use separate tasks instead.</p>
@@ -1212,7 +1270,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-08 08:53:17 UTC
+Last updated 2017-06-09 07:12:14 UTC
 </div>
 </div>
 </body>
