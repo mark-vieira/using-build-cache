@@ -81,7 +81,7 @@
 <li><a href="#example">5.4. Example</a></li>
 </ul>
 </li>
-<li><a href="#common-problems">6. Common problems and their solutions</a>
+<li><a href="#common-problems">6. Solving common problems</a>
 <ul class="sectlevel2">
 <li><a href="#system_file_encoding">6.1. System file encoding</a></li>
 <li><a href="#environment_variable_tracking">6.2. Environment variable tracking</a></li>
@@ -721,7 +721,7 @@ suggest to declare whatever change you expected to trigger the cache miss as an 
 You do not even have to enable the build cache for this exercise.
 The expected outcome is that that all incremental tasks are up-to-date.
 Tasks which have no output or no inputs will always be executed, but that shouldn&#8217;t be a problem.
-If you find some tasks which are out of date then use the methods from <a href="#diagnosing_cache_miss">Diagnosing the reasons for a cache miss</a> to determine the changed inputs for the tasks and use the methods from <a href="#common-problems">Common problems and their solutions</a> to fix those tasks.
+If you find some tasks which are out of date then use the methods from <a href="#diagnosing_cache_miss">Diagnosing the reasons for a cache miss</a> to determine the changed inputs for the tasks and use the methods from <a href="#common-problems">Solving common problems</a> to fix those tasks.
 The goal is to achieve <a href="#stable_task_inputs">Stable task inputs</a> for cacheable tasks.
 If you find a task which is out of date but no cacheable tasks depend on its outcome then you don&#8217;t have to do anything about it.</p>
 </div>
@@ -961,8 +961,17 @@ In order to solve this problem see <a href="#volatile_outputs">Non-repeatable ta
 </div>
 </div>
 <div class="sect1">
-<h2 id="common-problems"><a class="anchor" href="#common-problems"></a>6. Common problems and their solutions</h2>
+<h2 id="common-problems"><a class="anchor" href="#common-problems"></a>6. Solving common problems</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>Small problems in a build, like forgetting to declare a configuration file as an input to your task, can be easily be overlooked. The configuration file might change infrequently, or change only together with some other (correctly tracked) inputs. The worst that would happen is that your task doesn&#8217;t execute when it should be. Developers can always re-run the build with <code>clean</code>, and "fix" their builds for the price of a slow rebuild. In the end nobody gets blocked in their work, and the incident is chalked up to "Gradle acting up again."</p>
+</div>
+<div class="paragraph">
+<p>With cacheable tasks incorrect results are stored permanently, and can come back to haunt you later; re-running with <code>clean</code> won&#8217;t achieve much either. When using a shared cache, these problems even cross machine boundaries. In the example above, Gradle might end up loading a result for your task that was produced with a different configuration. Resolving these problems with the build thus becomes even more important when task output caching is enabled.</p>
+</div>
+<div class="paragraph">
+<p>Other issues with the build won&#8217;t cause it to produce incorrect results, but will lead to unnecessary cache misses. In this chapter we&#8217;ve compiled a list of some typical problems and ways to avoid them. Fixing these issues will have the side benefit that your build will stop "acting up," and developers can forget about running builds with <code>clean</code> altogether.</p>
+</div>
 <div class="sect2">
 <h3 id="system_file_encoding"><a class="anchor" href="#system_file_encoding"></a>6.1. System file encoding</h3>
 <div class="paragraph">
@@ -1356,7 +1365,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-09 08:56:00 UTC
+Last updated 2017-06-09 09:27:16 UTC
 </div>
 </div>
 </body>
