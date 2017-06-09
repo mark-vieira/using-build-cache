@@ -57,8 +57,8 @@
 </li>
 <li><a href="#important_concepts">3. Important concepts</a>
 <ul class="sectlevel2">
-<li><a href="#stable_task_inputs">3.1. Stable task inputs</a></li>
-<li><a href="#concepts_repeatable_task_outputs">3.2. Repeatable task outputs</a></li>
+<li><a href="#concepts_repeatable_task_outputs">3.1. Repeatable task outputs</a></li>
+<li><a href="#stable_task_inputs">3.2. Stable task inputs</a></li>
 <li><a href="#normalization">3.3. Better re-use via input normalization</a></li>
 <li><a href="#concepts_overlapping_outputs">3.4. The case against overlapping outputs</a></li>
 <li><a href="#re_use_of_task_outputs_with_the_same_inputs_but_different_task_paths">3.5. Re-use of task outputs with the same inputs, but different task paths</a></li>
@@ -235,7 +235,10 @@ In this way every developer can pull from this branch and benefit from using the
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-You might have encountered a few cached tasks even in the first of the two builds, where no previously cached results should be available. This can happen if you have tasks in your build that are configured to produce the same results from the same inputs; in such a case once one of these tasks has finished, Gradle will simply re-use its output for the rest of the tasks.
+<div class="paragraph">
+<p>You might have encountered a few cached tasks even in the first of the two builds, where no previously cached results should be available.
+This can happen if you have tasks in your build that are configured to produce the same results from the same inputs; in such a case once one of these tasks has finished, Gradle will simply re-use its output for the rest of the tasks.</p>
+</div>
 </td>
 </tr>
 </table>
@@ -335,7 +338,25 @@ A rise in the hit rate there probably indicates better usage by developers.</p>
 <p>As we said before, how much of your build gets loaded from cache depends on many factors. In this section we&#8217;ll review some of the tools that are essential for well-cached builds.</p>
 </div>
 <div class="sect2">
-<h3 id="stable_task_inputs"><a class="anchor" href="#stable_task_inputs"></a>3.1. Stable task inputs</h3>
+<h3 id="concepts_repeatable_task_outputs"><a class="anchor" href="#concepts_repeatable_task_outputs"></a>3.1. Repeatable task outputs</h3>
+<div class="paragraph">
+<p>Imagine that you&#8217;ve just pulled the main branch of your software afresh from version control. CI has already built this particular commit, so the remote cache should be hot: if you ran a build now, every cacheable task would be loaded from cache.</p>
+</div>
+<div class="paragraph">
+<p>Consider now making a small change to the inputs of your code generator task. Let&#8217;s make this a change that will not result in any <em>meaningful</em> difference to the code-generator. Maybe add an empty line at the end of a file, or change a comment.</p>
+</div>
+<div class="paragraph">
+<p>Because you&#8217;ve changed its inputs, the code generator task needs to execute again during the next build. However, it will generate <em>exactly the same output</em> as before, so anything that depends on that output will stay up-to-date.</p>
+</div>
+<div class="paragraph">
+<p>On the other hand, your code generator might add some extra information to its output that doesn&#8217;t depend on its declared inputs, like a timestamp. In such a case the otherwise unimportant change to the code generator&#8217;s inputs <em>will</em> result in different code being generated (because the timestamp will be updated). Tasks that depend on the code generator&#8217;s output will need to be re-executed. This can result in a cascade of meaningless changes rippling through the build, destroying build performance along the way.</p>
+</div>
+<div class="paragraph">
+<p>The key here is not to depend on undeclared volatile inputs like the aforementioned timestamps, or sequences like a CI build number.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="stable_task_inputs"><a class="anchor" href="#stable_task_inputs"></a>3.2. Stable task inputs</h3>
 <div class="paragraph">
 <p>Imagine that you&#8217;ve just pulled the main branch of your software afresh from version control. CI has already built this particular commit, so the remote cache should be hot: if you ran a build now, every cacheable task should be loaded from cache.</p>
 </div>
@@ -349,25 +370,6 @@ For example you decided to add a timestamp to your jar manifests or to a propert
 We call these inputs volatile.
 Cacheable tasks need to have stable inputs.
 If the inputs to a cacheable task are not stable, then it will never be pulled from the cache, and only take up space in the cache backend.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="concepts_repeatable_task_outputs"><a class="anchor" href="#concepts_repeatable_task_outputs"></a>3.2. Repeatable task outputs</h3>
-<div class="paragraph">
-<p>Now that you have stable task inputs, image the same situation as before.
-Again, you&#8217;ve just pulled the main branch of your software afresh from version control. CI has already built this particular commit, so the remote cache should be hot: if you ran a build now, every cacheable task would be loaded from cache.</p>
-</div>
-<div class="paragraph">
-<p>Consider now making a small change to the inputs of your code generator task. Let&#8217;s make this a change that will not result in any <em>meaningful</em> difference to the code-generator. Maybe add an empty line at the end of a file, or change a comment.</p>
-</div>
-<div class="paragraph">
-<p>Because you&#8217;ve changed its inputs, the code generator task needs to execute again during the next build. However, it will generate <em>exactly the same output</em> as before, so anything that depends on that output will stay up-to-date.</p>
-</div>
-<div class="paragraph">
-<p>However, if your code generator adds a timestamp, the otherwise meaningless change to the code generator&#8217;s inputs <em>will</em> result in different results being produced. Tasks that depend on the code generator&#8217;s output will need to be re-executed. This can result in a cascade of changes rippling through the build, destroying build performance along the way.</p>
-</div>
-<div class="paragraph">
-<p>You can avoid the cascade of change requiring everything to be rebuilt when your task is repeatable.</p>
 </div>
 </div>
 <div class="sect2">
@@ -964,7 +966,7 @@ In order to solve this problem see <a href="#volatile_outputs">Non-repeatable ta
 <h2 id="common-problems"><a class="anchor" href="#common-problems"></a>6. Solving common problems</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Small problems in a build, like forgetting to declare a configuration file as an input to your task, can be easily be overlooked. The configuration file might change infrequently, or change only together with some other (correctly tracked) inputs. The worst that would happen is that your task doesn&#8217;t execute when it should be. Developers can always re-run the build with <code>clean</code>, and "fix" their builds for the price of a slow rebuild. In the end nobody gets blocked in their work, and the incident is chalked up to "Gradle acting up again."</p>
+<p>Small problems in a build, like forgetting to declare a configuration file as an input to your task, can be easily overlooked. The configuration file might change infrequently, or only change when some other (correctly tracked) input changes as well. The worst that could happen is that your task doesn&#8217;t execute when it should be. Developers can always re-run the build with <code>clean</code>, and "fix" their builds for the price of a slow rebuild. In the end nobody gets blocked in their work, and the incident is chalked up to "Gradle acting up again."</p>
 </div>
 <div class="paragraph">
 <p>With cacheable tasks incorrect results are stored permanently, and can come back to haunt you later; re-running with <code>clean</code> won&#8217;t achieve much either. When using a shared cache, these problems even cross machine boundaries. In the example above, Gradle might end up loading a result for your task that was produced with a different configuration. Resolving these problems with the build thus becomes even more important when task output caching is enabled.</p>
@@ -1365,7 +1367,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-09 09:27:16 UTC
+Last updated 2017-06-09 10:36:33 UTC
 </div>
 </div>
 </body>
