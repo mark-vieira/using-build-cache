@@ -359,13 +359,28 @@ A rise in the hit rate there probably indicates better usage by developers.</p>
 <h3 id="stable_task_inputs"><a class="anchor" href="#stable_task_inputs"></a>3.2. Stable task inputs</h3>
 <div class="paragraph">
 <p>Having a task repeatably produce the same output is not enough if its inputs keep changing all the time.
-Timestamps and incremented sequences like the CI build number can sneak in as inputs when such information is added to the build&#8217;s version number.
-A version number like <code>3.2-<em>TIMESTAMP</em></code> can appear in a <code>version.properties</code> resource file.
-Anything that depends on that on that file will have a fresh set of inputs with every build.</p>
+Such unstable inputs can be supplied directly to the task. Think of a version number that includes a timestamp being added to the jar file&#8217;s manifest:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">version = <span class="string"><span class="delimiter">&quot;</span><span class="content">3.2-</span><span class="inline"><span class="inline-delimiter">${</span><span class="predefined-type">System</span>.currentTimeMillis()<span class="inline-delimiter">}</span></span><span class="delimiter">&quot;</span></span>
+
+jar {
+    manifest {
+        attributes(<span class="string"><span class="delimiter">&quot;</span><span class="content">Implementation-Version</span><span class="delimiter">&quot;</span></span>: version)
+    }
+}</code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p>Another example for unstable inputs is the commit ID from version control: maybe your version number is generated via <code>git describe</code>, maybe you include the commit hash directly in <code>version.properties</code> or a JAR manifest attribute.
+<p>Another example for unstable inputs is the commit ID from version control.
+Maybe your version number is generated via <code>git describe</code> (and you include it in the jar manifest as shown above).
+Or maybe you include the commit hash directly in <code>version.properties</code> or a JAR manifest attribute.
 Either way, the outputs produced by any tasks depending on such data will only be re-usable by builds running against the exact same commit.</p>
+</div>
+<div class="paragraph">
+<p>Tasks are rarely work in a standalone fashion, and instead frequently depend on each other&#8217;s outputs.
+A task using the non-repeatable outputs of another task as its inputs is a frequent way to introduce unstable inputs, too.</p>
 </div>
 </div>
 <div class="sect2">
@@ -445,33 +460,15 @@ This will not change the runtime behavior of the <code>test</code> task&#8201;&#
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="concepts_input_normalization_vs_repeatable_task_outputs"><a class="anchor" href="#concepts_input_normalization_vs_repeatable_task_outputs"></a>Input normalization and repeatable task outputs</h5>
-<div class="paragraph">
-<p>Input normalization and stable task outputs can both be used to solve the same problem:
-Having stable task inputs for tasks which depend on other tasks output.
-The difference is that input normalization works on the consumer side - the task consuming the output as an input -
-while repeatable task outputs try to solve the problem on the producer side - the task producing the output.</p>
-</div>
-<div class="paragraph">
-<p>Achieving repeatable outputs can be more difficult than using input normalization - especially when Gradle already provides support for the necessary normalization.
-Repeatable outputs can also be impossible to achieve for third party tasks which you do not have control on or when you need to include volatile data in your task artifacts for auditing purposes.
-Input normalization doesn&#8217;t have these limitation and the same output can be used with different meaning for different consumers.
-This is what Gradle already does with respect to runtime and compile classpath.
-The same files on the Java classpath are interpreted differently and different kinds of changes are detected.</p>
-</div>
-<div class="paragraph">
-<p>The Gradle team is planning on extending the support for configurable input normalization in future versions of Gradle.</p>
-</div>
-</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="concepts_overlapping_outputs"><a class="anchor" href="#concepts_overlapping_outputs"></a>3.4. The case against overlapping outputs</h3>
 <div class="paragraph">
-<p>If two tasks write to the same output directory or output file it is difficult for Gradle to determine which output belongs to which task.
+<p>When two tasks write to the same output directory or output file, it is difficult for Gradle to determine which output belongs to which task.
+There are many edge cases, and executing the tasks in parallel cannot be done safely.
 It is also hard to automatically remove stale output files for the same reason.
-Tasks which have dedicated output directories which do not overlap are much easier to understand to Gradle.</p>
+Tasks that have dedicated, non-overlapping outputs can always be handled in a safe fashion by Gradle.</p>
 </div>
 <div class="paragraph">
 <p>Moreover, task output caching will always restore the whole output directory of a task from the cache.
@@ -1274,7 +1271,7 @@ For example, when doing incremental builds it is possible that the artifact on d
 A task depending on this task output would then not be able to load outputs from the build cache since the inputs are not exactly the same.</p>
 </div>
 <div class="paragraph">
-<p>As described <a href="#concepts_input_normalization_vs_repeatable_task_outputs">earlier</a> you can either make the task outputs repeatable or use input normalization.</p>
+<p>As described <a href="#stable_task_inputs">earlier</a> you can either make the task outputs repeatable or use input normalization.</p>
 </div>
 <div class="paragraph">
 <p>We already talked about the possibilities with input normalization and the possibility to configure input normalization.</p>
@@ -1365,7 +1362,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-09 12:25:14 UTC
+Last updated 2017-06-09 13:04:07 UTC
 </div>
 </div>
 </body>
