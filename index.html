@@ -945,6 +945,16 @@ This means that running the same build on machines with different file encoding 
 Currently Gradle only tracks on a per-task basis that no file encoding has been specified, but it does not track the system encoding of the JVM in use.
 This can cause incorrect builds. You should always set the file system encoding to avoid these kind of problems.</p>
 </div>
+<div class="paragraph">
+<p>Note that the build scripts are compiled with the file encoding of the Gradle daemon which also uses the system file encoding by default.
+You should set file encoding for the Gradle daemon in your <code>gradle.properties</code>:</p>
+</div>
+<div class="listingblock">
+<div class="title">gradle.properties</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="properties">org.gradle.jvmargs=-Dfile.encoding=UTF-8</code></pre>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="environment_variable_tracking"><a class="anchor" href="#environment_variable_tracking"></a>6.2. Environment variable tracking</h3>
@@ -1270,7 +1280,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-09 07:12:14 UTC
+Last updated 2017-06-09 08:16:47 UTC
 </div>
 </div>
 </body>
