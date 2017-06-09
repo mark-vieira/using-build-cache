@@ -349,7 +349,7 @@ A rise in the hit rate there probably indicates better usage by developers.</p>
 <p>Because you&#8217;ve changed its inputs, the code generator task needs to execute again during the next build. However, it will generate <em>exactly the same output</em> as before, so anything that depends on that output will stay up-to-date.</p>
 </div>
 <div class="paragraph">
-<p>On the other hand, your code generator might add some extra information to its output that doesn&#8217;t depend on its declared inputs, like a timestamp. In such a case the otherwise unimportant change to the code generator&#8217;s inputs <em>will</em> result in different code being generated (because the timestamp will be updated). Tasks that depend on the code generator&#8217;s output will need to be re-executed. This can result in a cascade of meaningless changes rippling through the build, destroying build performance along the way.</p>
+<p>On the other hand, your code generator might add some extra information to its output that doesn&#8217;t depend on its declared inputs, like a timestamp. In such a case the otherwise unimportant change to the code generator&#8217;s inputs <em>will</em> result in different code being generated (because the timestamp will be updated). Tasks that depend on the code generator&#8217;s output will need to be re-executed.</p>
 </div>
 <div class="paragraph">
 <p>The key here is not to depend on undeclared volatile inputs like the aforementioned timestamps, or sequences like a CI build number.</p>
@@ -358,80 +358,76 @@ A rise in the hit rate there probably indicates better usage by developers.</p>
 <div class="sect2">
 <h3 id="stable_task_inputs"><a class="anchor" href="#stable_task_inputs"></a>3.2. Stable task inputs</h3>
 <div class="paragraph">
-<p>Imagine that you&#8217;ve just pulled the main branch of your software afresh from version control. CI has already built this particular commit, so the remote cache should be hot: if you ran a build now, every cacheable task should be loaded from cache.</p>
+<p>Having a task repeatably produce the same output is not enough if its inputs keep changing all the time.
+Timestamps and incremented sequences like the CI build number can sneak in as inputs when such information is added to the build&#8217;s version number.
+A version number like <code>3.2-<em>TIMESTAMP</em></code> can appear in a <code>version.properties</code> resource file.
+Anything that depends on that on that file will have a fresh set of inputs with every build.</p>
 </div>
 <div class="paragraph">
-<p>For this to work, the cacheable tasks in your local build need to have exactly the same inputs as they had on CI.
-This is only possible if your inputs are stable, i.e. they only depend on the state of the workspace and the tools required by the build, e.g. the Java version.</p>
-</div>
-<div class="paragraph">
-<p>It could well be that the inputs to your tasks are dependent on something you cannot control, for example the current time.
-For example you decided to add a timestamp to your jar manifests or to a property file on the classpath.
-We call these inputs volatile.
-Cacheable tasks need to have stable inputs.
-If the inputs to a cacheable task are not stable, then it will never be pulled from the cache, and only take up space in the cache backend.</p>
+<p>Another example for unstable inputs is the commit ID from version control: maybe your version number is generated via <code>git describe</code>, maybe you include the commit hash directly in <code>version.properties</code> or a JAR manifest attribute.
+Either way, the outputs produced by any tasks depending on such data will only be re-usable by builds running against the exact same commit.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="normalization"><a class="anchor" href="#normalization"></a>3.3. Better re-use via input normalization</h3>
 <div class="paragraph">
 <p>We saw that having stable inputs is crucial for cacheable tasks.
-Achieving byte by byte identical inputs for each task can be challenging.
+However, achieving byte by byte identical inputs for each task can be challenging.
 This is where <a href="https://docs.gradle.org/4.0-rc-2/userguide/more_about_tasks.html#sec:configure_input_normalization">input normalization</a> comes into play.
 Input normalization is used by Gradle to determine if two task inputs are essentially the same.
-Gradle uses normalized inputs when doing up-to-date checks and when determining the build cache key.</p>
+Gradle uses normalized inputs when doing up-to-date checks and when determining if a cached result can be re-used instead of executing the task.</p>
 </div>
 <div class="paragraph">
-<p>When comparing two file collections Gradle needs to look at two aspects from each file: the file path and the file contents.
-The consumer of the file collection needs to declare what about a file is essential with respect to these two aspects.</p>
+<p>When it comes to file inputs, Gradle can normalize the path of the files as well as their contents.
+It is always the <em>consumer</em> of the files that declares what about the input files is essential with respect to these two aspects.</p>
 </div>
 <div class="sect3">
 <h4 id="relocatability"><a class="anchor" href="#relocatability"></a>3.3.1. Path sensitivity and relocatability</h4>
 <div class="paragraph">
-<p>Tasks having file collections as inputs can declare the parts of a file path what are essential to them - this is called the <em>path sensitivity</em> of the input.
-For example, the class file produced by the Java compiler is dependent on the file name of the Java source file and does not depended on other parts of the file path.
-Therefore, the path sensitivity for the sources of the <code>JavaCompile</code> task is <code>NAME_ONLY</code>.
-Only the normalized paths of Java sources - the file name - would be considered an input to the <code>JavaCompile</code> task.</p>
+<p>When sharing cached results between computers, it&#8217;s rare that everyone runs the build from the exact same location on their computers.
+To allow cached results to be shared even when builds are executed from different root directories, Gradle needs to understand which inputs can be relocated and which cannot.</p>
 </div>
 <div class="paragraph">
-<p>In order to re-use task outputs between different build machines, the normalized file paths need to agree between tasks of the different workspaces.
-This only works if the path sensitivity of its inputs is <code>NONE</code>, <code>NAME_ONLY</code> or <code>RELATIVE</code>.
-Absolute paths cannot be relocated between different build machines in general.
-Trying to do so would require everyone trying to re-use the outputs built on one machine to have its workspace and all the tools used by the build in the same location.
-This is highly impractical. A task or its inputs are called relocateable if all of the file inputs have a relocatable path sensitivity.</p>
+<p>Tasks having files as inputs can declare the parts of a file&#8217;s path what are essential to them: this is called the <em>path sensitivity</em> of the input.
+Task properties that have no path sensitivity declared are considered non-relocatable</p>
 </div>
 <div class="paragraph">
-<p>Cacheable tasks always should be relocatable and we made sure that this is true for all tasks which ship with Gradle.</p>
+<p>For example, the class files produced by the Java compiler are dependent on the file names of the Java source files: renaming the source files with public classes would fail the build.
+However, moving the files around would have no effect on the result of the compilation.
+Therefore, the path sensitivity for the sources of the <code>JavaCompile</code> task is <code>NAME_ONLY</code>. Because of this only the normalized paths of the Java source files&#8201;&#8212;&#8201;the file names&#8201;&#8212;&#8201;are considered as inputs to the <code>JavaCompile</code> task.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="compile_avoidance"><a class="anchor" href="#compile_avoidance"></a>3.3.2. Compile avoidance</h4>
+<h4 id="content_normalization"><a class="anchor" href="#content_normalization"></a>3.3.2. Content normalization</h4>
+<div class="sect4">
+<h5 id="compile_avoidance"><a class="anchor" href="#compile_avoidance"></a>Compile avoidance for Java</h5>
 <div class="paragraph">
-<p>Java compilation is only affected by changes to the ABI of the compile classpath.
-Gradle has a deep understanding of what a compile classpath is and therefore uses a sophisticated normalization strategy for it.
+<p>When it comes to the dependencies of a <code>JavaCompile</code> task (i.e. its <em>compile classpath),</em> only changes to the Application Binary Interface (ABI) of these dependencies require compilation to be executed.
+re-used, despite having been compiled with different actual bytes on the compile classpath.
+Gradle has a deep understanding of what a compile classpath is and uses a sophisticated normalization strategy for it.
 Task outputs can be re-used as long the the ABI of the classes on the compile classpath stays the same.
-This enables Gradle to avoid Java compilation by using incremental builds or the build cache.
-For more information on compile avoidance see the corresponding section in the <a href="https://docs.gradle.org/4.0-rc-2/userguide/java_plugin.html#sec:java_compile_avoidance">userguide</a>.</p>
+This enables Gradle to avoid Java compilation by using incremental builds, or load results from the cache that were produced by different (but ABI-compatible) versions of dependencies.
+For more information on compile avoidance see the corresponding section in the <a href="https://docs.gradle.org/4.0-rc-2/userguide/java_plugin.html#sec:java_compile_avoidance">user guide</a>.</p>
 </div>
 </div>
-<div class="sect3">
-<h4 id="runtime_classpath"><a class="anchor" href="#runtime_classpath"></a>3.3.3. Runtime classpath normalization</h4>
+<div class="sect4">
+<h5 id="runtime_classpath"><a class="anchor" href="#runtime_classpath"></a>Runtime classpath normalization</h5>
 <div class="paragraph">
-<p>Similar to compile avoidance, Gradle does understand the concept of a runtime classpath and uses a tailored input normalization to avoid running e.g. tests.
-For example, for a runtime classpath Gradle inspects the contents of jar files and ignores the timestamps and order of the entries in the jar file.
+<p>Similar to compile avoidance, Gradle does understand the concept of a runtime classpath, and uses tailored input normalization to avoid running e.g. tests.
+For runtime classpaths Gradle inspects the contents of jar files and ignores the timestamps and order of the entries in the jar file.
 This means that a rebuilt jar file would be considered the same runtime classpath input.
 For details on what level of understanding Gradle has for detecting changes to classpaths see the <a href="https://docs.gradle.org/4.0-rc-2/userguide/more_about_tasks.html#sec:task_input_using_classpath_annotations">userguide</a>.</p>
 </div>
-<div class="sect4">
-<h5 id="filter_runtime_classpath"><a class="anchor" href="#filter_runtime_classpath"></a>Filtering</h5>
+<div class="sect5">
+<h6 id="filter_runtime_classpath"><a class="anchor" href="#filter_runtime_classpath"></a>Filtering runtime classpaths</h6>
 <div class="paragraph">
-<p>For a runtime classpath it is even possible to provide better insights to Gradle which files are essential to the input by <a href="https://docs.gradle.org/4.0-rc-2/userguide/more_about_tasks.html#sec:configure_input_normalization">configuring input normalization</a>.</p>
+<p>For a runtime classpath it is possible to provide better insights to Gradle which files are essential to the input by <a href="https://docs.gradle.org/4.0-rc-2/userguide/more_about_tasks.html#sec:configure_input_normalization">configuring input normalization</a>.</p>
 </div>
 <div class="paragraph">
 <p>Let&#8217;s say you want to add a file <code>build-info.properties</code> to all your produced jar files which contains volatile information about the build, e.g. the timestamp when the build started or some ID to identify the CI job that published the artifact.
 This file is only used for auditing purposes, and has no effect on the outcome of running tests.
-Nonetheless, this file is part of the runtime classpath for the <code>test</code> task and changes on every build invocation.
-In order to benefit from task output caching again you can add the following configuration to your project.</p>
+Nonetheless, this file is part of the runtime classpath for the <code>test</code> task. Since the file changes on every build invocation, tests cannot be cached effectively.
+To fix this you can ignore <code>build-info.properties</code> on any runtime classpath by adding the following configuration to build script:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -443,13 +439,13 @@ In order to benefit from task output caching again you can add the following con
 </div>
 </div>
 <div class="paragraph">
-<p>The effect of this configuration would be that changes to <code>build-info.properties</code> would be ignored for up-to-date checks and build cache key calculations.
-This will not change the runtime behavior of the <code>test</code> task - i.e. any test is still able to load <code>build-info.properties</code> and the runtime classpath is still the same as before.</p>
+<p>The effect of this configuration would be that changes to <code>build-info.properties</code> would be ignored for both up-to-date checks and task output caching.
+This will not change the runtime behavior of the <code>test</code> task&#8201;&#8212;&#8201;i.e. any test is still able to load <code>build-info.properties</code>, and the runtime classpath stays the same as before.</p>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="concepts_input_normalization_vs_repeatable_task_outputs"><a class="anchor" href="#concepts_input_normalization_vs_repeatable_task_outputs"></a>3.3.4. Input normalization and repeatable task outputs</h4>
+<div class="sect4">
+<h5 id="concepts_input_normalization_vs_repeatable_task_outputs"><a class="anchor" href="#concepts_input_normalization_vs_repeatable_task_outputs"></a>Input normalization and repeatable task outputs</h5>
 <div class="paragraph">
 <p>Input normalization and stable task outputs can both be used to solve the same problem:
 Having stable task inputs for tasks which depend on other tasks output.
@@ -465,6 +461,7 @@ The same files on the Java classpath are interpreted differently and different k
 </div>
 <div class="paragraph">
 <p>The Gradle team is planning on extending the support for configurable input normalization in future versions of Gradle.</p>
+</div>
 </div>
 </div>
 </div>
@@ -1367,7 +1364,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-09 10:36:33 UTC
+Last updated 2017-06-09 12:11:26 UTC
 </div>
 </div>
 </body>
