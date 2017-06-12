@@ -18,8 +18,8 @@
 <link rel="manifest" href="https://guides.gradle.org/icon/manifest.json">
 <link rel="mask-icon" href="https://guides.gradle.org/icon/safari-pinned-tab.svg" color="#5bbad5">
 <link rel="shortcut icon" href="https://guides.gradle.org/icon/favicon.ico">
-<meta name="apple-mobile-web-app-title" content="Build Cache Practices">
-<meta name="application-name" content="Build Cache Practices">
+<meta name="apple-mobile-web-app-title" content="Using the Build Cache">
+<meta name="application-name" content="Using the Build Cache">
 <meta name="msapplication-config" content="https://guides.gradle.org/icon/browserconfig.xml">
 <meta name="theme-color" content="#ffffff">
 <script defer src="https://guides.gradle.org/js/set-time-to-complete-text.js"></script>
@@ -708,7 +708,7 @@ will share outputs between tasks that should have had a different output. If you
  For Gradle&#8217;s built-in tasks we prefer to err on the side of correctness and we suggest that you do the same.</p>
 </div>
 <div class="paragraph">
-<p>This chapter is about finding out why a cache miss was happening. If you have a cache hit which you didn&#8217;t expect we
+<p>This chapter is about finding out why a cache miss happened. If you have a cache hit which you didn&#8217;t expect we
 suggest to declare whatever change you expected to trigger the cache miss as an input to the task.</p>
 </div>
 <div class="sect2">
@@ -951,7 +951,7 @@ In order to solve this problem see <a href="#volatile_outputs">Non-repeatable ta
 </td>
 <td class="content">
 <div class="paragraph">
-<p>The compile classpath is not affected since compile avoidance ignores non-class files on the compile classpath.</p>
+<p>The compile classpath is not affected since compile avoidance ignores non-class files on the classpath.</p>
 </div>
 </td>
 </tr>
@@ -1365,7 +1365,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-12 08:48:20 UTC
+Last updated 2017-06-12 08:51:14 UTC
 </div>
 </div>
 </body>
