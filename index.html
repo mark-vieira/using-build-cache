@@ -129,7 +129,11 @@
 <div class="sect2">
 <h3 id="speed_up_developer_builds_with_the_local_cache"><a class="anchor" href="#speed_up_developer_builds_with_the_local_cache"></a>1.1. Speed up developer builds with the local cache</h3>
 <div class="paragraph">
-<p>Even when used by a single developer only, the build cache can be pretty useful. Gradle&#8217;s <em>incremental build</em> feature helps avoid work that is already done, but once you change the inputs of a task, it forgets any previous results. When you are switching branches back and forth, the local results get rebuilt over and over again, even if you are building something that has already been built before. The build cache remembers, though, and heavily reduces the need to rebuild things when they were already built locally. In general it&#8217;s also very useful when you need to rebuild different commits, like when running <code>git bisect</code>.</p>
+<p>Even when used by a single developer only, the build cache can be pretty useful.
+Gradle&#8217;s <em>incremental build</em> feature helps to avoid work that is already done, but once you re-execute task, any previous results are forgotten.
+When you are switching branches back and forth, the local results get rebuilt over and over again, even if you are building something that has already been built before.
+The build cache remembers the earlier build results, though, and heavily reduces the need to rebuild things when they were already built locally.
+In general it&#8217;s also very useful when you need to rebuild different commits, like when running <code>git bisect</code>.</p>
 </div>
 <div class="paragraph">
 <p>The local cache can also be useful when working with a project that has multiple variants dimensions, like in the case of Android applications. Each variant has a number of tasks associated with it, and some of those task variants, despite having different names, can end up doing the same things. With the local cache enabled re-use between task variants will happen automatically when applicable.</p>
@@ -140,7 +144,8 @@
 <div class="paragraph">
 <p>The build cache can do more than going back-and-forth in time: it can also bridge physical distance between computers, allowing results generated on one machine to be re-used by another.
 A usual first step when introducing the build cache within a team is to enable it for builds running as part of <em>continuous integration</em> only. Using a shared HTTP build cache backend (such as <a href="https://gradle.com/build-cache/">the one provided by Gradle Enterprise</a>) can significantly reduce the work CI agents need to do.
-This translates into faster feedback to developers, and less money spent on the CI infrastructure.</p>
+This translates into much faster feedback to developers, and less money spent on the CI infrastructure.
+Faster builds also mean fewer commits being part of each build, which makes debugging issues much more efficient.</p>
 </div>
 <div class="paragraph">
 <p>Using the build cache on CI first makes sense as the environment on CI agents is usually easier to control than developer machines.
@@ -148,7 +153,8 @@ It helps to point out possible issues with the build that hurt cacheability.</p>
 </div>
 <div class="paragraph">
 <p>If you are subject to audit requirements regarding the artifacts you ship to your customers you may need to disable the build cache for certain builds.
-When using Gradle Enterprise you can easily find out which build produced an artifact coming from the build cache by clicking on the <code>FROM-CACHE</code> status:</p>
+Gradle Enterprise may help you with fulfilling these requirements while still using the build cache for all your builds.
+It allows you to easily find out which build produced an artifact coming from the build cache by clicking on the corresponding icon in the timeline:</p>
 </div>
 <div class="imageblock screenshot">
 <div class="content">
@@ -160,17 +166,13 @@ When using Gradle Enterprise you can easily find out which build produced an art
 <h3 id="accelerate_developer_builds_by_reusing_ci_results"><a class="anchor" href="#accelerate_developer_builds_by_reusing_ci_results"></a>1.3. Accelerate developer builds by reusing CI results</h3>
 <div class="paragraph">
 <p>When multiple developers work on the same project, they don&#8217;t just need to build their own changes: whenever they pull from version control, they end up having to build each others' changes as well.
-If the pulled changes are sufficiently independent, the developer can safely re-use outputs already generated on CI.
+Whenever a developer is working on something independent of the pulled changes, they can safely re-use outputs already generated on CI.
 Say, you&#8217;re working on module "A", and you pull in some changes to module "B" (which does not depend on your module).
 If those changes were already built in CI, you can download the task outputs for module "B" from the cache instead of generating them locally.
 A typical use case for this is when developers start their day, pull all changes from version control and then run their first build.</p>
 </div>
 <div class="paragraph">
 <p>The changes don&#8217;t need to be completely independent, either; we&#8217;ll take a look at the strategies to re-use results when dependencies are involved in the section about the <a href="#normalization">different forms of normalization</a>.</p>
-</div>
-<div class="paragraph">
-<p>It may be helpful to have your CI builds push to a branch after the build warming up the build cache completed.
-In this way every developer can pull from this branch and benefit from using the shared build cache.</p>
 </div>
 </div>
 <div class="sect2">
@@ -182,7 +184,7 @@ In this way every developer can pull from this branch and benefit from using the
 <div class="sect2">
 <h3 id="share_results_between_developers"><a class="anchor" href="#share_results_between_developers"></a>1.5. Share results between developers</h3>
 <div class="paragraph">
-<p>Using the local cache is a sort of one-to-one thing, while the HTTP cache typically has a one-to-many topology.
+<p>Using the local cache means that one build cache is used by one developer, while the HTTP cache typically has a one-to-many topology.
 Gradle also allows the use of distributed caches.
 The <a href="https://gradle.com/build-cache">Gradle enterprise build cache</a> will soon include support for multiple nodes.
 There is also a proof of concept build cache backend <a href="https://github.com/gradle/gradle-hazelcast-plugin/">using Hazelcast</a>.</p>
@@ -213,7 +215,25 @@ There is also a proof of concept build cache backend <a href="https://github.com
 <h2 id="build_cache_performance"><a class="anchor" href="#build_cache_performance"></a>2. Build cache performance</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The sole reason to use any build cache is to make builds faster. But how much faster can you go when using the cache? Measuring the impact is both important and complicated, as cache performance is determined by many factors. Initial measurements of the cache&#8217;s impact can validate the extra effort (work, infrastructure) that was required to start using the cache. These measurements can later serve as baselines for future improvements, and to watch for signs of regressions.</p>
+<p>The sole reason to use any build cache is to make builds faster.
+But how much faster can you go when using the cache?
+Measuring the impact is both important and complicated, as cache performance is determined by many factors.
+Initial measurements of the cache&#8217;s impact can validate the extra effort (work, infrastructure) that was required to start using the cache.
+These measurements can later serve as baselines for future improvements, and to watch for signs of regressions.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Proper configuration and maintenance of a build can improve caching performance in a big way.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 <div class="sect2">
 <h3 id="fully_cached_builds"><a class="anchor" href="#fully_cached_builds"></a>2.1. Fully cached builds</h3>
@@ -253,7 +273,7 @@ This can happen if you have tasks in your build that are configured to produce t
 </div>
 <div class="paragraph">
 <p>Normally, your <em>fully cached</em> build should be significantly faster than the <code>clean</code> build: this is the theoretical limit of how much time using the build cache can save on your particular build when running the tasks that you were running.
-We&#8217;ll be covering several common causes for why your build might not produce amazing numbers here for the first try, see <a href="#finding_problems">"Finding problems with task output caching"</a>.
+If you do not see the expected performance gains here on the first try, see <a href="#finding_problems">"Finding problems with task output caching"</a>.
 Build scans provide a detailed performance breakdown which show you how effectively your build is using the build cache:</p>
 </div>
 <div class="imageblock screenshot">
@@ -262,7 +282,10 @@ Build scans provide a detailed performance breakdown which show you how effectiv
 </div>
 </div>
 <div class="paragraph">
-<p>In everyday situations fully cached builds are rare, as the purpose of running a build is to process some new changes. The structure of the software being built (how many modules are there, how independent are its parts etc.), and the nature of the changes themselves ("big refactor in the core of the system" vs. "small change to a unit test" etc.) strongly influence the caching performance. As developers tend to submit different kinds of changes over time, caching performance is expected to vary with each change. As with any cache, the impact should thus be measured over time.</p>
+<p>In everyday situations fully cached builds are rare, as the purpose of running a build is to process some new changes.
+The structure of the software being built (how many modules are there, how independent are its parts etc.), and the nature of the changes themselves ("big refactor in the core of the system" vs. "small change to a unit test" etc.) strongly influence the performance gains delivered by the build cache.
+As developers tend to submit different kinds of changes over time, caching performance is expected to vary with each change.
+As with any cache, the impact should thus be measured over time.</p>
 </div>
 <div class="paragraph">
 <p>In a setup where a team uses a shared cache backend, there are two locations worth measuring cache impact at: on CI and on developer machines.</p>
@@ -286,7 +309,9 @@ It&#8217;s important to distinguish those parts of the pipeline that caching has
 <div class="paragraph">
 <p>You can use <a href="https://confluence.jetbrains.com/display/TCD10/Statistic+Charts">statistic charts</a> if you use Teamcity for your CI builds.
 Most of time you will end up extracting data from your CI server via the corresponding REST API (see <a href="https://wiki.jenkins-ci.org/display/JENKINS/Remote+access+API">Jenkins remote access API</a> and <a href="https://confluence.jetbrains.com/display/TCD10/REST+API">Teamcity REST API</a>).
-When using Gradle Enterprise, you can use the <a href="https://docs.gradle.com/enterprise/export-api/">export API</a> to access the necessary data and run your analytics on them.</p>
+When using Gradle Enterprise, you can use the <a href="https://docs.gradle.com/enterprise/export-api/">export API</a> to access the necessary data and run your analytics on them.
+Gradle Enterprise provides richer data compared to what can be obtained from the CI server.
+For example, you can get insights into the execution of single tasks.</p>
 </div>
 <div class="paragraph">
 <p>Typically, CI builds above a certain size include parallel sections to utilize multiple agents. With parallel pipelines you can measure the wall-clock time it takes for a set of changes to go from having been pushed to version control to being built, verified and deployed. The build cache&#8217;s effect in this case can be measured in the reduction of the time developers have to wait for feedback from CI.</p>
@@ -1375,7 +1400,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-12 12:32:18 UTC
+Last updated 2017-06-12 15:10:43 UTC
 </div>
 </div>
 </body>
