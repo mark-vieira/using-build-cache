@@ -609,13 +609,11 @@ For example, declaring the operating system in use by Gradle as an input to a <c
 <div class="sect3">
 <h4 id="archives_as_inputs"><a class="anchor" href="#archives_as_inputs"></a>4.3.1. Archives as inputs</h4>
 <div class="paragraph">
-<p>Depending on a zip or tar archive as an input file will lead to cache misses since rebuilding will probably change the metadata in the archive as described in <a href="#concepts_repeatable_task_outputs">"Repeatable task outputs"</a>.
-To avoid this problem altogether you can instead depend on the contents on the archive. See also the section on dealing with <a href="#volatile_outputs">non-repeatable outputs</a>.</p>
-</div>
-<div class="paragraph">
-<p>Let us assume that you ship an executable jar as a distribution.
-Instead of adding the jar itself as an input to your test task, you should depend on whatever makes up the jar.
-And that would most likely be the classes and some resources.</p>
+<p>It is common for the integration tests to depend on your packaged application.
+If this happens to be a zip or tar archive, then adding it as an input to the integration test task may lead to cache misses.
+This is because, as described in <a href="#concepts_repeatable_task_outputs">"Repeatable task outputs"</a>, rebuilding an archive often changes the metadata in the archive.
+You can depend on the exploded contents of the archive instead.
+See also the section on dealing with <a href="#volatile_outputs">non-repeatable outputs</a>.</p>
 </div>
 </div>
 <div class="sect3">
@@ -1377,7 +1375,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-12 12:00:54 UTC
+Last updated 2017-06-12 12:28:11 UTC
 </div>
 </div>
 </body>
