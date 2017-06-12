@@ -612,6 +612,11 @@ For example, declaring the operating system in use by Gradle as an input to a <c
 <p>Depending on a zip or tar archive as an input file will lead to cache misses since rebuilding will probably change the metadata in the archive as described in <a href="#concepts_repeatable_task_outputs">repeatable task outputs</a>.
 To avoid this problem altogether you can instead depend on the contents on the archive. See also the section on dealing with <a href="#volatile_outputs">non-repeatable outputs</a>.</p>
 </div>
+<div class="paragraph">
+<p>Let us assume that you ship an executable jar as a distribution.
+Instead of adding the jar itself as an input to your test task, you should depend on whatever makes up the jar.
+And that would most likely be the classes and some resources.</p>
+</div>
 </div>
 <div class="sect3">
 <h4 id="dealing_with_file_paths"><a class="anchor" href="#dealing_with_file_paths"></a>4.3.2. Dealing with file paths</h4>
@@ -1372,7 +1377,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-12 09:08:09 UTC
+Last updated 2017-06-12 09:18:20 UTC
 </div>
 </div>
 </body>
