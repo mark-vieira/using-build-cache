@@ -58,12 +58,13 @@
 </li>
 <li><a href="#important_concepts">3. Important concepts</a>
 <ul class="sectlevel2">
-<li><a href="#concepts_repeatable_task_outputs">3.1. Repeatable task outputs</a></li>
-<li><a href="#stable_task_inputs">3.2. Stable task inputs</a></li>
-<li><a href="#normalization">3.3. Better re-use via input normalization</a></li>
-<li><a href="#concepts_overlapping_outputs">3.4. The case against overlapping outputs</a></li>
-<li><a href="#re_use_of_outputs_between_different_tasks">3.5. Re-use of outputs between different tasks</a></li>
-<li><a href="#non_cacheable_tasks">3.6. Non-cacheable tasks</a></li>
+<li><a href="#build_cache_key">3.1. Build cache key</a></li>
+<li><a href="#concepts_repeatable_task_outputs">3.2. Repeatable task outputs</a></li>
+<li><a href="#stable_task_inputs">3.3. Stable task inputs</a></li>
+<li><a href="#normalization">3.4. Better re-use via input normalization</a></li>
+<li><a href="#concepts_overlapping_outputs">3.5. The case against overlapping outputs</a></li>
+<li><a href="#re_use_of_outputs_between_different_tasks">3.6. Re-use of outputs between different tasks</a></li>
+<li><a href="#non_cacheable_tasks">3.7. Non-cacheable tasks</a></li>
 </ul>
 </li>
 <li><a href="#caching_java_projects">4. Caching Java projects</a>
@@ -345,7 +346,35 @@ In this section you will see some of the tools that are essential for well-cache
 <a href="https://gradle.com/build-scans">Build scans</a> are part of that toolchain and will be used throughout this guide.</p>
 </div>
 <div class="sect2">
-<h3 id="concepts_repeatable_task_outputs"><a class="anchor" href="#concepts_repeatable_task_outputs"></a>3.1. Repeatable task outputs</h3>
+<h3 id="build_cache_key"><a class="anchor" href="#build_cache_key"></a>3.1. Build cache key</h3>
+<div class="paragraph">
+<p>Artifacts in the build cache are uniquely identified by a <em><a href="https://docs.gradle.org/nightly/userguide/build_cache.html#sec:task_output_caching_details">build cache key</a>.</em>
+A build cache key is assigned to each cacheable task when running with the build cache enabled.
+It is used for loading and storing task outputs to the build cache.
+The following inputs contribute to the build cache key for a task:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The task implementation</p>
+</li>
+<li>
+<p>The task action implementations</p>
+</li>
+<li>
+<p>The names of the output properties</p>
+</li>
+<li>
+<p>The names and values of task inputs</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Two tasks can re-use their outputs by using the build cache if their associated build cache keys are the same.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="concepts_repeatable_task_outputs"><a class="anchor" href="#concepts_repeatable_task_outputs"></a>3.2. Repeatable task outputs</h3>
 <div class="paragraph">
 <p>Assume that you have a code generator task as part of your build.
 When you have a fully up to date build and you clean and re-run the code generator task on the same code base it should generate <em>exactly the same output</em>, so anything that depends on that output will stay up-to-date.</p>
@@ -366,7 +395,7 @@ The key here is that no cacheable task has non-repeatable task outputs as an inp
 </div>
 </div>
 <div class="sect2">
-<h3 id="stable_task_inputs"><a class="anchor" href="#stable_task_inputs"></a>3.2. Stable task inputs</h3>
+<h3 id="stable_task_inputs"><a class="anchor" href="#stable_task_inputs"></a>3.3. Stable task inputs</h3>
 <div class="paragraph">
 <p>Having a task repeatably produce the same output is not enough if its inputs keep changing all the time.
 Such unstable inputs can be supplied directly to the task. Think of a version number that includes a timestamp being added to the jar file&#8217;s manifest:</p>
@@ -397,7 +426,7 @@ Unstable task inputs result in the task having a unique set of inputs for every 
 </div>
 </div>
 <div class="sect2">
-<h3 id="normalization"><a class="anchor" href="#normalization"></a>3.3. Better re-use via input normalization</h3>
+<h3 id="normalization"><a class="anchor" href="#normalization"></a>3.4. Better re-use via input normalization</h3>
 <div class="paragraph">
 <p>Having stable inputs is crucial for cacheable tasks.
 However, achieving byte for byte identical inputs for each task can be challenging.
@@ -413,7 +442,7 @@ As input normalization is declared by the task <em>consuming</em> the data as in
 <p>When it comes to file inputs, Gradle can normalize the path of the files as well as their contents.</p>
 </div>
 <div class="sect3">
-<h4 id="relocatability"><a class="anchor" href="#relocatability"></a>3.3.1. Path sensitivity and relocatability</h4>
+<h4 id="relocatability"><a class="anchor" href="#relocatability"></a>3.4.1. Path sensitivity and relocatability</h4>
 <div class="paragraph">
 <p>When sharing cached results between computers, it&#8217;s rare that everyone runs the build from the exact same location on their computers.
 To allow cached results to be shared even when builds are executed from different root directories, Gradle needs to understand which inputs can be relocated and which cannot.</p>
@@ -445,7 +474,7 @@ As a consequence, path sensitivity for Java sources is <code>NAME_ONLY</code> an
 </div>
 </div>
 <div class="sect3">
-<h4 id="content_normalization"><a class="anchor" href="#content_normalization"></a>3.3.2. Content normalization</h4>
+<h4 id="content_normalization"><a class="anchor" href="#content_normalization"></a>3.4.2. Content normalization</h4>
 <div class="sect4">
 <h5 id="compile_avoidance"><a class="anchor" href="#compile_avoidance"></a>Compile avoidance for Java</h5>
 <div class="paragraph">
@@ -494,7 +523,7 @@ This will not change the runtime behavior of the <code>test</code> task&#8201;&#
 </div>
 </div>
 <div class="sect2">
-<h3 id="concepts_overlapping_outputs"><a class="anchor" href="#concepts_overlapping_outputs"></a>3.4. The case against overlapping outputs</h3>
+<h3 id="concepts_overlapping_outputs"><a class="anchor" href="#concepts_overlapping_outputs"></a>3.5. The case against overlapping outputs</h3>
 <div class="paragraph">
 <p>When two tasks write to the same output directory or output file, it is difficult for Gradle to determine which output belongs to which task.
 There are many edge cases, and executing the tasks in parallel cannot be done safely.
@@ -512,7 +541,7 @@ For the aforementioned reasons, task output caching is automatically disabled fo
 </div>
 </div>
 <div class="sect2">
-<h3 id="re_use_of_outputs_between_different_tasks"><a class="anchor" href="#re_use_of_outputs_between_different_tasks"></a>3.5. Re-use of outputs between different tasks</h3>
+<h3 id="re_use_of_outputs_between_different_tasks"><a class="anchor" href="#re_use_of_outputs_between_different_tasks"></a>3.6. Re-use of outputs between different tasks</h3>
 <div class="paragraph">
 <p>Some builds exhibit a surprising characteristic: even when executed against an empty cache, they produce tasks loaded from cache. How is this possible? Rest assured that this is completely normal.</p>
 </div>
@@ -528,7 +557,7 @@ These tasks can safely re-use each other&#8217;s outputs.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="non_cacheable_tasks"><a class="anchor" href="#non_cacheable_tasks"></a>3.6. Non-cacheable tasks</h3>
+<h3 id="non_cacheable_tasks"><a class="anchor" href="#non_cacheable_tasks"></a>3.7. Non-cacheable tasks</h3>
 <div class="paragraph">
 <p>You&#8217;ve seen quite a bit about cacheable tasks, which implies there are non-cacheable ones, too. If caching task outputs is as awesome as it sounds, why not cache every task?</p>
 </div>
@@ -1394,7 +1423,7 @@ They will continue improving the build cache and give you more tools to make you
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-13 15:43:39 UTC
+Last updated 2017-06-13 15:44:07 UTC
 </div>
 </div>
 </body>
